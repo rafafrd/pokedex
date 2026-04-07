@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Pokemon</title>
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      sizes="16x16"
+      href="./favicons/favicon-16x16.png"
+      type="image/x-icon"
+    />
+
+    <!-- link css -->
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <!-- link js -->
+    <script src="./js/server.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <img src="" alt="pokemon" class="pokemon__image" />
+      <h1 class="pokemon__data">
+        <span class="pokemon__number">1 -</span>
+        <span class="pokemon__name">Ronaldo</span>
+      </h1>
+
+      <form>
+        <input
+          type="text"
+          name="search"
+          id="search"
+          placeholder="Name or number"
+          required
+        />
+      </form>
+
+      <div class="buttons">
+        <button class="btn__prev">Prev</button>
+        <button class="btn__next">Next</button>
+      </div>
+      <img src="./images/pokedex.png" alt="pokedex" class="pokedex" />
+    </main>
+  </body>
+</html>
