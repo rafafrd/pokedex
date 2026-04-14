@@ -11,7 +11,28 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: linear-gradient(to bottom, #ffd900, #e100ff);
+  
+  /* tentativa de fundo do mar */
+  background: linear-gradient(115deg, #0A001F, #2D1252, #0A001F);
+  background-size: 300% 300%;
+  
+  /* Animação: nome | duração | suavidade | infinita */
+  animation: smoothGradient 12s ease infinite;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* movimento */
+@keyframes smoothGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 main {
@@ -38,7 +59,7 @@ main {
   font-weight: 600;
   color: #e100ff;
   top: 54%;
-  right: 40%;
+  right: 30%;
 }
 
 .pokemon__name {
