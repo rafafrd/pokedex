@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme tokens. `useTheme` sets `data-theme` on <html>; every color below
+ * is read by Tailwind via `tailwind.config.js` (colors.* -> var(--color-*))
+ * so both plain CSS and Tailwind utility classes stay in sync.
+ *
+ * Values are stored as "R G B" channel triples (not hex) so Tailwind's
+ * opacity modifiers work (`bg-surface/40` compiles to
+ * `rgb(var(--color-surface) / 0.4)` — that only produces valid CSS when the
+ * variable holds bare numbers). Wrap any raw usage in plain CSS with
+ * `rgb(...)`, as done below.
+ *
+ * Default (no data-theme yet, first paint) mirrors Gengar to avoid a flash.
+ */
+:root {
+  --color-bg-1: 26 5 38; /* #1A0526 */
+  --color-bg-2: 45 11 61; /* #2D0B3D */
+  --color-bg-3: 18 3 27; /* #12031B */
+  --color-surface: 106 13 173; /* #6A0DAD */
+  --color-border: 125 120 163; /* #7D78A3 */
+  --color-accent: 195 28 65; /* #C31C41 */
+  --color-accent-hover: 226 58 93; /* #E23A5D */
+  --color-highlight: 162 156 187; /* #A29CBB */
+  --color-text-primary: 245 237 250; /* #F5EDFA */
+  --color-text-secondary: 162 156 187; /* #A29CBB */
+  color-scheme: dark;
+}
+
+[data-theme="gengar"] {
+  --color-bg-1: 26 5 38;
+  --color-bg-2: 45 11 61;
+  --color-bg-3: 18 3 27;
+  --color-surface: 106 13 173;
+  --color-border: 125 120 163;
+  --color-accent: 195 28 65;
+  --color-accent-hover: 226 58 93;
+  --color-highlight: 162 156 187;
+  --color-text-primary: 245 237 250;
+  --color-text-secondary: 162 156 187;
+  color-scheme: dark;
+}
+
+[data-theme="mewtwo"] {
+  --color-bg-1: 245 237 250; /* #F5EDFA */
+  --color-bg-2: 236 216 245; /* #ECD8F5 */
+  --color-bg-3: 223 192 236; /* #DFC0EC */
+  --color-surface: 201 167 199; /* #C9A7C7 */
+  --color-border: 131 82 113; /* #835271 */
+  --color-accent: 107 77 187; /* #6B4DBB */
+  --color-accent-hover: 131 103 209; /* #8367D1 */
+  --color-highlight: 245 237 250; /* #F5EDFA */
+  --color-text-primary: 78 62 80; /* #4E3E50 */
+  --color-text-secondary: 131 82 113; /* #835271 */
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text-primary);
+
+  /* Lazy animated gradient blending the theme's three background stops. */
+  background-image: linear-gradient(
+    120deg,
+    rgb(var(--color-bg-1)),
+    rgb(var(--color-bg-2)),
+    rgb(var(--color-bg-3))
+  );
+  background-size: 400% 400%;
+  animation: smoothGradient 25s ease infinite;
+  transition: color 0.4s ease;
+  overflow-x: hidden;
+}
+
+@keyframes smoothGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
+}
+
+::selection {
+  background: rgb(var(--color-accent));
+  color: white;
+}
+
+/* Slim, theme-aware scrollbar (WebKit). */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-border));
+  border-radius: 999px;
+}
