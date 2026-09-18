@@ -47,6 +47,8 @@ export default {
         smoothGradient: "smoothGradient 25s ease infinite",
         shimmer: "shimmer 1.6s ease-in-out infinite",
         floatSlow: "floatSlow 6s ease-in-out infinite",
+        // Marching-ants dash used by the Flow Button (spell-ui) outline.
+        flowDash: "flowDash 1s linear infinite",
       },
       keyframes: {
         smoothGradient: {
@@ -61,6 +63,9 @@ export default {
         floatSlow: {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-8px)" },
+        },
+        flowDash: {
+          to: { strokeDashoffset: "-10" },
         },
       },
       backdropBlur: {

@@ -7,12 +7,19 @@ interface PokemonCardProps {
   onSelect: (pokemon: PokemonSummary) => void;
 }
 
+/**
+ * One grid tile. `h-full` makes the button fill the stretched grid cell (it
+ * sits inside a TiltCard wrapper, so without it every card would collapse to
+ * its own content height and the row would look ragged), and `mt-auto` on the
+ * type chips pins them to the bottom edge so they line up across the row no
+ * matter how many lines the name takes.
+ */
 export function PokemonCard({ pokemon, onSelect }: PokemonCardProps) {
   return (
     <button
       type="button"
       onClick={() => onSelect(pokemon)}
-      className="group flex flex-col items-center gap-2 rounded-2xl border border-border/40 bg-surface/30 p-4 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/70 hover:bg-surface/50 hover:shadow-lg hover:shadow-accent/20 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="group flex h-full min-h-[16rem] w-full flex-col items-center gap-2.5 rounded-2xl border border-border/40 bg-surface/50 p-5 text-center backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-accent/70 hover:bg-surface/65 hover:shadow-lg hover:shadow-accent/20 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       <span className="text-xs font-semibold tracking-wide text-text-secondary">
         #{String(pokemon.id).padStart(3, "0")}
@@ -20,12 +27,12 @@ export function PokemonCard({ pokemon, onSelect }: PokemonCardProps) {
       <PokemonSprite
         sprites={pokemon.sprites}
         alt={pokemon.name}
-        className="h-24 w-24 object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110"
+        className="h-28 w-28 flex-shrink-0 object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110"
       />
-      <h3 className="text-base font-bold capitalize text-text-primary">
+      <h3 className="text-base font-bold capitalize leading-tight text-text-primary">
         {pokemon.name}
       </h3>
-      <div className="flex flex-wrap justify-center gap-1.5">
+      <div className="mt-auto flex flex-wrap justify-center gap-1.5 pt-1">
         {pokemon.types.map((type) => (
           <span
             key={type}
