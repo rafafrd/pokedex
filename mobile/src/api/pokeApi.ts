@@ -1,8 +1,12 @@
 import type {
   PokeApiAbilitySlot,
+  PokeApiBlackWhiteSprites,
   PokeApiListResponse,
   PokeApiNamedResource,
   PokeApiPokemonResponse,
+  PokeApiShowdownSpriteVariant,
+  PokeApiSpriteFrameFields,
+  PokeApiSpriteVariant,
   PokeApiSprites,
   PokeApiStat,
   PokeApiTypeSlot,
@@ -253,15 +257,72 @@ function parseAbilities(value: unknown, endpoint: string): PokeApiAbilitySlot[] 
   });
 }
 
-function parseSpriteVariant(value: unknown, endpoint: string): {
-  front_default: string | null;
-  front_shiny?: string | null;
-} {
-  if (value === undefined || value === null) return { front_default: null };
-  if (!isRecord(value)) return invalidResponse(endpoint, "sprite inválido");
+function parseSpriteFrameFields(
+  value: Record<string, unknown>,
+  endpoint: string,
+  fieldPrefix: string,
+): PokeApiSpriteFrameFields {
+  const readField = (field: keyof PokeApiSpriteFrameFields): string | null =>
+    readNullableString(value[field], `${fieldPrefix}.${field}`, endpoint);
+
   return {
-    front_default: readNullableString(value.front_default, "front_default", endpoint),
-    front_shiny: readNullableString(value.front_shiny, "front_shiny", endpoint),
+    back_default: readField("back_default"),
+    back_female: readField("back_female"),
+    back_shiny: readField("back_shiny"),
+    back_shiny_female: readField("back_shiny_female"),
+    back_transparent: readField("back_transparent"),
+    front_default: readField("front_default"),
+    front_female: readField("front_female"),
+    front_shiny: readField("front_shiny"),
+    front_shiny_female: readField("front_shiny_female"),
+    front_transparent: readField("front_transparent"),
+  };
+}
+
+function parseSpriteVariant(
+  value: unknown,
+  endpoint: string,
+  field = "sprite",
+): PokeApiSpriteVariant {
+  if (value === undefined || value === null) return { front_default: null };
+  if (!isRecord(value)) return invalidResponse(endpoint, `${field} inválido`);
+  return {
+    ...parseSpriteFrameFields(value, endpoint, field),
+    front_default: readNullableString(value.front_default, `${field}.front_default`, endpoint),
+  };
+}
+
+function parseShowdownSpriteVariant(
+  value: unknown,
+  endpoint: string,
+  field = "other.showdown",
+): PokeApiShowdownSpriteVariant {
+  if (value === undefined || value === null) return { front_default: null };
+  if (!isRecord(value)) return invalidResponse(endpoint, `${field} inválido`);
+
+  return {
+    ...parseSpriteVariant(value, endpoint, field),
+    animated:
+      value.animated === undefined
+        ? undefined
+        : parseSpriteVariant(value.animated, endpoint, `${field}.animated`),
+  };
+}
+
+function parseBlackWhiteSprites(
+  value: unknown,
+  endpoint: string,
+  field = 'versions.generation-v["black-white"]',
+): PokeApiBlackWhiteSprites {
+  if (value === undefined || value === null) return {};
+  if (!isRecord(value)) return invalidResponse(endpoint, `${field} inválido`);
+
+  return {
+    ...parseSpriteFrameFields(value, endpoint, field),
+    animated:
+      value.animated === undefined
+        ? undefined
+        : parseSpriteVariant(value.animated, endpoint, `${field}.animated`),
   };
 }
 
@@ -271,41 +332,48 @@ function parseSprites(value: unknown, endpoint: string): PokeApiSprites {
 
   const other = isRecord(value.other)
     ? {
+        dream_world:
+          value.other.dream_world === undefined
+            ? undefined
+            : parseSpriteVariant(value.other.dream_world, endpoint, "other.dream_world"),
+        home:
+          value.other.home === undefined
+            ? undefined
+            : parseSpriteVariant(value.other.home, endpoint, "other.home"),
         showdown:
           value.other.showdown === undefined
             ? undefined
-            : parseSpriteVariant(value.other.showdown, endpoint),
+            : parseShowdownSpriteVariant(value.other.showdown, endpoint),
         "official-artwork":
           value.other["official-artwork"] === undefined
             ? undefined
-            : parseSpriteVariant(value.other["official-artwork"], endpoint),
+            : parseSpriteVariant(
+                value.other["official-artwork"],
+                endpoint,
+                'other["official-artwork"]',
+              ),
       }
     : undefined;
 
-  const versions = isRecord(value.versions)
-    ? (() => {
-        const generationV = isRecord(value.versions?.["generation-v"])
-          ? value.versions["generation-v"]
-          : undefined;
-        const blackWhite = isRecord(generationV?.["black-white"])
-          ? generationV["black-white"]
-          : undefined;
-        return {
-          "generation-v": {
-            "black-white": {
-              animated:
-                blackWhite?.animated === undefined
-                  ? undefined
-                  : parseSpriteVariant(blackWhite.animated, endpoint),
-            },
-          },
-        };
-      })()
+  const versionsValue = isRecord(value.versions) ? value.versions : undefined;
+  const generationV = isRecord(versionsValue?.["generation-v"])
+    ? versionsValue["generation-v"]
+    : undefined;
+  const blackWhite = generationV?.["black-white"];
+  const versions = generationV
+    ? {
+        "generation-v": {
+          "black-white":
+            blackWhite === undefined
+              ? undefined
+              : parseBlackWhiteSprites(blackWhite, endpoint),
+        },
+      }
     : undefined;
 
   return {
-    front_default: readNullableString(value.front_default, "front_default", endpoint),
-    front_shiny: readNullableString(value.front_shiny, "front_shiny", endpoint),
+    ...parseSpriteFrameFields(value, endpoint, "sprites"),
+    front_default: readNullableString(value.front_default, "sprites.front_default", endpoint),
     other,
     versions,
   };
@@ -335,22 +403,48 @@ function parsePokemonResponse(
   };
 }
 
-/** Maps PokeAPI sprite fields, preferring official artwork over the front sprite. */
+type SpriteUrlCandidate = string | null | undefined;
+
+function firstSpriteUrl(...candidates: readonly SpriteUrlCandidate[]): string | null {
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/** Maps PokeAPI sprite fields into the ordered domain sprite contract. */
 export function mapPokeApiSprites(sprites: PokeApiSprites): PokemonSpriteSet {
+  const blackWhiteAnimated =
+    sprites.versions?.["generation-v"]?.["black-white"]?.animated;
+  const showdown = sprites.other?.showdown;
+
   return {
-    animated:
-      sprites.versions?.["generation-v"]?.["black-white"]?.animated
-        ?.front_default ?? null,
-    showdown: sprites.other?.showdown?.front_default ?? null,
-    artwork: sprites.other?.["official-artwork"]?.front_default ?? null,
-    front: sprites.front_default ?? null,
+    animated: firstSpriteUrl(blackWhiteAnimated?.front_default),
+    showdown: firstSpriteUrl(showdown?.animated?.front_default, showdown?.front_default),
+    artwork: firstSpriteUrl(sprites.other?.["official-artwork"]?.front_default),
+    front: firstSpriteUrl(sprites.front_default),
   };
 }
 
-/** Selects the preferred image URL, with the base sprite as a safe fallback. */
-export function selectPokemonSprite(sprites: PokemonSpriteSet): string | null {
-  return sprites.artwork ?? sprites.front;
+/**
+ * Returns the best URL for rendering a Pokémon image.
+ *
+ * The order is intentionally part of the public API contract:
+ * Black/White animated, Showdown animated, official artwork, then the base
+ * `front_default` sprite. Empty strings are treated as missing values so a
+ * malformed optional source cannot prevent a later fallback from being used.
+ */
+export function getBestPokemonSpriteUrl(sprites: PokemonSpriteSet): string | null {
+  return firstSpriteUrl(sprites.animated, sprites.showdown, sprites.artwork, sprites.front);
 }
+
+/** Backwards-compatible name for callers that already use the selector. */
+export const selectPokemonSprite = getBestPokemonSpriteUrl;
+
+/** Explicit alias for consumers that prefer a verb-first selector name. */
+export const selectBestPokemonSprite = getBestPokemonSpriteUrl;
 
 export function mapPokeApiSummary(raw: PokeApiPokemonResponse): PokemonSummary {
   return {

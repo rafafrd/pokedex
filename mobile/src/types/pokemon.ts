@@ -1,4 +1,11 @@
-/** Ordered sprite sources used by the UI, from richer to simpler imagery. */
+/**
+ * Ordered sprite sources exposed by the API mapper.
+ *
+ * `animated` is the animated Generation V (Black/White) sprite and
+ * `showdown` is the animated Showdown sprite when PokeAPI provides one.
+ * Consumers should use `getBestPokemonSpriteUrl` from the API module when
+ * they need one renderable URL instead of reimplementing this order.
+ */
 export interface PokemonSpriteSet {
   animated: string | null;
   showdown: string | null;
@@ -43,8 +50,13 @@ export type {
   PokeApiListResponse,
   PokeApiNamedResource,
   PokeApiPokemonResponse,
+  PokeApiBlackWhiteSprites,
+  PokeApiShowdownSpriteVariant,
+  PokeApiSpriteFrameFields,
+  PokeApiSpriteOther,
   PokeApiSpriteVariant,
   PokeApiSprites,
+  PokeApiSpriteVersions,
   PokeApiStat,
   PokeApiTypeSlot,
 } from "./pokeapi";
