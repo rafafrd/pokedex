@@ -8,6 +8,7 @@ import { Pagination } from "./components/pokemon/Pagination";
 import { PokemonDetailView } from "./components/pokemon/PokemonDetailView";
 import { PokemonGrid } from "./components/pokemon/PokemonGrid";
 import { SearchBar } from "./components/pokemon/SearchBar";
+import { FlowButton } from "./components/spell-ui/FlowButton";
 import { useDebounce } from "./hooks/useDebounce";
 import { usePokeApi } from "./hooks/usePokeApi";
 import { useTheme } from "./hooks/useTheme";
@@ -83,7 +84,7 @@ function App() {
     <div className="relative min-h-screen w-full">
       <ThreeBackground theme={palette} />
 
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
         <header className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -136,14 +137,13 @@ function App() {
                     <AlertTriangle size={16} className="text-accent" />
                     {errorMessage}
                   </span>
-                  <button
-                    type="button"
+                  <FlowButton
+                    size="sm"
                     onClick={() => fetchList(currentPage, itemsPerPage)}
-                    className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-hover"
                   >
                     <RotateCcw size={14} />
                     Tentar novamente
-                  </button>
+                  </FlowButton>
                 </div>
               )}
 
@@ -151,6 +151,7 @@ function App() {
                 pokemonList={sortedPokemonList}
                 isLoading={isLoading}
                 itemsPerPage={itemsPerPage}
+                page={currentPage}
                 onSelect={(pokemon) => setSearchQuery(pokemon.name)}
               />
 
