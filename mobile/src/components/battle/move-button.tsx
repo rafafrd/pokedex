@@ -29,24 +29,35 @@ export function MoveButton({ moveState, disabled = false, onPress }: MoveButtonP
     ? `PP ${moveState.currentPp}/${move.maxPp}`
     : "Sem custo de PP";
   const accessibilityLabel = `${formatMoveName(move.name)}, tipo ${translatedType}, poder ${move.power}, ${ppLabel}${isDisabled ? ", indisponível" : ""}`;
+  const accessibilityHint = noPp
+    ? "Este golpe está sem PP."
+    : disabled
+      ? "Aguarde a resolução da jogada."
+      : undefined;
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isDisabled }}
       disabled={isDisabled}
       onPress={() => onPress(moveState)}
-      style={({ pressed }) => [styles.button, isDisabled && styles.disabled, pressed && !isDisabled && styles.pressed]}
+      style={({ pressed }) => [
+        styles.button,
+        { borderLeftColor: typeVisual.background },
+        isDisabled && styles.disabled,
+        pressed && !isDisabled && styles.pressed,
+      ]}
     >
       <View style={styles.topRow}>
         <Text numberOfLines={1} style={styles.name}>{formatMoveName(move.name)}</Text>
-        <Text style={styles.power}>POD {move.power}</Text>
-      </View>
-      <View style={styles.bottomRow}>
         <View style={[styles.typeBadge, { backgroundColor: typeVisual.background }]}>
           <Text style={[styles.typeText, { color: getPokemonTypeTextColor(move.type) }]}>{translatedType}</Text>
         </View>
+      </View>
+      <View style={styles.bottomRow}>
+        <Text style={styles.power}>POD {move.power}</Text>
         <Text style={styles.pp}>{ppLabel}</Text>
       </View>
     </Pressable>
@@ -57,35 +68,44 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.card,
     borderColor: colors.cardBorder,
-    borderRadius: radius.md,
+    borderLeftWidth: 5,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: spacing.sm,
-    minHeight: 74,
-    paddingHorizontal: spacing.md,
+    elevation: 2,
+    gap: spacing.xs,
+    minHeight: 80,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
+    shadowColor: colors.deepBlueStrong,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   disabled: {
-    opacity: 0.48,
+    backgroundColor: colors.cardSurface,
+    elevation: 0,
+    opacity: 0.46,
   },
   pressed: {
-    backgroundColor: colors.cardSurface,
-    transform: [{ scale: 0.985 }],
+    backgroundColor: "#EDF5FA",
+    transform: [{ scale: 0.97 }, { translateY: 1 }],
   },
   topRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: spacing.xs,
+    gap: spacing.xxs,
     justifyContent: "space-between",
   },
   name: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.textPrimary,
     flexShrink: 1,
     fontWeight: "700",
   },
   power: {
-    ...typography.overline,
+    ...typography.caption,
     color: colors.textSecondary,
+    fontVariant: ["tabular-nums"],
   },
   bottomRow: {
     alignItems: "center",
@@ -94,15 +114,18 @@ const styles = StyleSheet.create({
   },
   typeBadge: {
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
   },
   typeText: {
-    ...typography.overline,
-    fontSize: 10,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.35,
   },
   pp: {
-    ...typography.caption,
+    fontSize: 11,
+    fontWeight: "700",
     color: colors.textSecondary,
+    fontVariant: ["tabular-nums"],
   },
 });

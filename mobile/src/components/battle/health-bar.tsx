@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, spacing, typography } from "@/theme";
 
@@ -21,6 +22,22 @@ export function HealthBar({ name, currentHp, maxHp, label = "PV" }: HealthBarPro
   const fillColor = percentage <= 20 ? colors.commandRed : percentage <= 50 ? "#D99A18" : "#3C9B63";
   const safeMax = Number.isFinite(maxHp) ? Math.max(0, maxHp) : 0;
   const safeCurrent = Number.isFinite(currentHp) ? Math.max(0, Math.min(currentHp, safeMax)) : 0;
+  const fillProgress = useRef(new Animated.Value(percentage)).current;
+
+  useEffect(() => {
+    const animation = Animated.timing(fillProgress, {
+      toValue: percentage,
+      duration: 420,
+      useNativeDriver: false,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [fillProgress, percentage]);
+
+  const fillWidth = fillProgress.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+  });
 
   return (
     <View style={styles.container}>
@@ -35,7 +52,7 @@ export function HealthBar({ name, currentHp, maxHp, label = "PV" }: HealthBarPro
         accessibilityValue={{ min: 0, max: safeMax, now: safeCurrent, text: `${Math.round(safeCurrent)} de ${Math.round(safeMax)} pontos de vida` }}
         style={styles.track}
       >
-        <View style={[styles.fill, { width: `${percentage}%`, backgroundColor: fillColor }]} />
+        <Animated.View style={[styles.fill, { width: fillWidth, backgroundColor: fillColor }]} />
       </View>
     </View>
   );
@@ -43,7 +60,7 @@ export function HealthBar({ name, currentHp, maxHp, label = "PV" }: HealthBarPro
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.xs,
+    gap: spacing.xxs,
     width: "100%",
   },
   labelRow: {
@@ -54,20 +71,24 @@ const styles = StyleSheet.create({
   label: {
     ...typography.overline,
     color: colors.textSecondary,
+    fontSize: 10,
   },
   hpText: {
-    ...typography.caption,
+    fontSize: 11,
+    fontWeight: "800",
     color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
   },
   track: {
-    backgroundColor: colors.cardBorder,
+    backgroundColor: "rgba(16, 42, 67, 0.14)",
     borderRadius: radius.pill,
-    height: 10,
+    height: 11,
     overflow: "hidden",
     width: "100%",
   },
   fill: {
     borderRadius: radius.pill,
     height: "100%",
+    minWidth: 0,
   },
 });

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import type { BattleEvent } from "@/battle/contracts";
 import { colors, radius, spacing, typography } from "@/theme";
@@ -45,51 +45,82 @@ export function formatBattleLogItem(item: BattleLogItem): string {
   }
 }
 
-export function BattleLog({ items, title = "Registro da batalha", maxHeight = 132 }: BattleLogProps) {
+export function BattleLog({ items, title = "Últimas jogadas", maxHeight = 112 }: BattleLogProps) {
+  const recentItems = items.slice(-3);
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <ScrollView
-        accessibilityLabel={title}
-        nestedScrollEnabled
-        style={[styles.scroll, { maxHeight }]}
-      >
-        {items.length === 0 ? (
-          <Text style={styles.empty}>Escolha um golpe para começar.</Text>
-        ) : items.map((item, index) => (
-          <Text key={`${index}-${typeof item === "string" ? item : item.type}`} style={styles.entry}>
-            {formatBattleLogItem(item)}
-          </Text>
-        ))}
-      </ScrollView>
+    <View accessibilityLabel={title} style={[styles.container, { maxHeight }]}>
+      <View style={styles.headingRow}>
+        <View style={styles.indicator} />
+        <Text style={styles.title}>{title}</Text>
+      </View>
+      <View style={styles.messages}>
+        {recentItems.length === 0 ? (
+          <Text accessibilityLiveRegion="polite" style={styles.latest}>Escolha um golpe para começar.</Text>
+        ) : recentItems.map((item, index) => {
+          const isLatest = index === recentItems.length - 1;
+          return (
+            <Text
+              accessibilityLiveRegion={isLatest ? "polite" : undefined}
+              key={`${index}-${typeof item === "string" ? item : item.type}`}
+              numberOfLines={isLatest ? 2 : 1}
+              style={[styles.entry, isLatest ? styles.latest : styles.previous]}
+            >
+              {formatBattleLogItem(item)}
+            </Text>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.card,
-    borderColor: colors.cardBorder,
+    backgroundColor: "#FFFDF7",
+    borderColor: colors.deepBlue,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 2,
+    elevation: 2,
     gap: spacing.xs,
-    padding: spacing.md,
+    overflow: "hidden",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    shadowColor: colors.deepBlueStrong,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+  },
+  headingRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  indicator: {
+    backgroundColor: colors.commandRed,
+    borderRadius: radius.pill,
+    height: 7,
+    width: 7,
   },
   title: {
     ...typography.overline,
     color: colors.textSecondary,
+    fontSize: 9,
+    letterSpacing: 0.7,
   },
-  scroll: {
-    flexGrow: 0,
+  messages: {
+    gap: 1,
   },
   entry: {
     ...typography.caption,
-    color: colors.textPrimary,
-    paddingVertical: spacing.xxs,
+    paddingVertical: 1,
   },
-  empty: {
-    ...typography.caption,
-    color: colors.textMuted,
-    paddingVertical: spacing.xxs,
+  previous: {
+    color: colors.textSecondary,
+    opacity: 0.72,
+  },
+  latest: {
+    ...typography.body,
+    color: colors.deepBlueStrong,
+    fontWeight: "700",
   },
 });

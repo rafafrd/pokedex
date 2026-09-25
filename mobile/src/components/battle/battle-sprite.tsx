@@ -58,7 +58,9 @@ export function BattleSprite({
         accessibilityLabel={`${label}; imagem indisponível`}
         style={[styles.placeholder, { width: safeSize, height: safeSize }, containerStyle]}
       >
-        <Text style={styles.placeholderText}>{displayName(name).slice(0, 2).toUpperCase()}</Text>
+        <View style={styles.placeholderOrb}>
+          <Text style={styles.placeholderText}>{displayName(name).slice(0, 2).toUpperCase()}</Text>
+        </View>
       </View>
     );
   }
@@ -69,6 +71,7 @@ export function BattleSprite({
         accessible
         accessibilityRole="image"
         accessibilityLabel={label}
+        autoplay
         cachePolicy="memory-disk"
         contentFit="contain"
         onError={() => setCandidateIndex((index) => Math.min(index + 1, candidates.length))}
@@ -97,6 +100,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     justifyContent: "center",
+  },
+  placeholderOrb: {
+    alignItems: "center",
+    backgroundColor: "rgba(16, 42, 67, 0.06)",
+    borderColor: colors.cardBorder,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: "62%",
+    justifyContent: "center",
+    width: "62%",
   },
   placeholderText: {
     ...typography.title,
