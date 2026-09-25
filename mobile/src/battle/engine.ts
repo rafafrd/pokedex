@@ -33,6 +33,8 @@ export type ActiveBattlePhase = Extract<
   "intro" | "waiting-player" | "resolving-player" | "resolving-opponent"
 >;
 
+type InProgressBattleState = Extract<BattleState, { readonly winner: null }>;
+
 export interface BattleTurnResult {
   readonly state: BattleState;
   readonly events: readonly BattleEvent[];
@@ -101,13 +103,7 @@ function createCombatant(definition: BattlePokemonDefinition): BattleCombatant {
     normalizedDefinition.baseStats,
     BATTLE_CONFIG.level,
   );
-  const moveStates = normalizedDefinition.moves.map(
-    (move): RegularBattleMoveState => ({
-      kind: "regular",
-      move,
-      currentPp: move.maxPp,
-    }),
-  ) as RegularBattleMoveStateList;
+  const moveStates = initializeMoveStates(normalizedDefinition.moves);
 
   return {
     definition: normalizedDefinition,
@@ -154,7 +150,7 @@ function activeState(
   state: BattleState,
   phase: ActiveBattlePhase,
   turnNumber: number = state.turnNumber,
-): BattleState {
+): InProgressBattleState {
   return {
     player: state.player,
     opponent: state.opponent,
@@ -162,6 +158,47 @@ function activeState(
     phase,
     winner: null,
   };
+}
+
+function createRegularMoveState(
+  move: BattlePokemonDefinition["moves"][number],
+): RegularBattleMoveState {
+  return {
+    kind: "regular",
+    move,
+    currentPp: move.maxPp,
+  };
+}
+
+function initializeMoveStates(
+  moves: BattlePokemonDefinition["moves"],
+): RegularBattleMoveStateList {
+  switch (moves.length) {
+    case 1:
+      return [createRegularMoveState(moves[0])];
+    case 2:
+      return [
+        createRegularMoveState(moves[0]),
+        createRegularMoveState(moves[1]),
+      ];
+    case 3:
+      return [
+        createRegularMoveState(moves[0]),
+        createRegularMoveState(moves[1]),
+        createRegularMoveState(moves[2]),
+      ];
+    case 4:
+      return [
+        createRegularMoveState(moves[0]),
+        createRegularMoveState(moves[1]),
+        createRegularMoveState(moves[2]),
+        createRegularMoveState(moves[3]),
+      ];
+    default:
+      throw new RangeError(
+        `A battle definition must contain 1 to ${BATTLE_CONFIG.maxMoves} regular moves.`,
+      );
+  }
 }
 
 function terminalState(
@@ -215,13 +252,42 @@ function consumeMovePp(
 ): BattleCombatant {
   if (selected.kind === "emergency") return combatant;
 
-  const moveStates = combatant.moveStates.map((state) =>
+  const consume = (state: RegularBattleMoveState): RegularBattleMoveState =>
     state.move.id === selected.move.id
       ? { ...state, currentPp: Math.max(0, state.currentPp - 1) }
-      : state,
-  ) as RegularBattleMoveStateList;
+      : state;
+  const moveStates = combatant.moveStates;
+  let updatedMoveStates: RegularBattleMoveStateList;
 
-  return { ...combatant, moveStates };
+  switch (moveStates.length) {
+    case 1:
+      updatedMoveStates = [consume(moveStates[0])];
+      break;
+    case 2:
+      updatedMoveStates = [consume(moveStates[0]), consume(moveStates[1])];
+      break;
+    case 3:
+      updatedMoveStates = [
+        consume(moveStates[0]),
+        consume(moveStates[1]),
+        consume(moveStates[2]),
+      ];
+      break;
+    case 4:
+      updatedMoveStates = [
+        consume(moveStates[0]),
+        consume(moveStates[1]),
+        consume(moveStates[2]),
+        consume(moveStates[3]),
+      ];
+      break;
+    default:
+      throw new RangeError(
+        `A battle combatant must contain 1 to ${BATTLE_CONFIG.maxMoves} regular moves.`,
+      );
+  }
+
+  return { ...combatant, moveStates: updatedMoveStates };
 }
 
 function resolvingPhaseFor(side: BattleSide): ActiveBattlePhase {
@@ -244,7 +310,10 @@ function resolveAction(
   randomSource: RandomSource,
   events: BattleEvent[],
 ): BattleState {
-  let state = activeState(initialState, resolvingPhaseFor(actorSide));
+  let state: BattleState = activeState(
+    initialState,
+    resolvingPhaseFor(actorSide),
+  );
   const targetSide = oppositeSide(actorSide);
   let actor = combatantFor(state, actorSide);
   let target = combatantFor(state, targetSide);
@@ -387,7 +456,7 @@ export function resolveBattleTurn(
     randomSource,
   );
 
-  let nextState = state;
+  let nextState: BattleState = state;
   const events: BattleEvent[] = [];
   const moveBySide: Record<BattleSide, BattleMoveState> = {
     player: playerMove,
