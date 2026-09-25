@@ -69,9 +69,11 @@ export function CompanionView({
   const [nickname, setNickname] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState("");
+  // O save guarda o último instante; projetamos o pet p/ "agora" antes de exibir.
   const pet = activeCompanion(save, now);
   const adopt = async (event: FormEvent) => {
     event.preventDefault();
+    // Só fecho o formulário se o comando passou nas regras E foi salvo.
     if (await execute({ type: "adopt", pokemon: selected, nickname })) {
       setChoosing(false);
       setNickname("");
@@ -109,6 +111,7 @@ export function CompanionView({
   const bond = pet ? bondProgress(pet.xp) : null;
   const mood = pet ? companionMood(pet) : null;
   const favorite = pet ? favoriteBerry(pet.pokemon.id) : null;
+  // Ex.: colheu há 2 min => faltam 3 min até a próxima ida ao pomar.
   const forageRemaining =
     save.lastForageAt === null
       ? 0
@@ -116,6 +119,7 @@ export function CompanionView({
   const basketClaimed =
     !!save.lastBasketDay && save.lastBasketDay >= localDay(now);
   const owned = save.companions.some((p) => p.pokemon.id === selected.id);
+  // Quem veio da ficha entra primeiro, mas as seis sugestões continuam visíveis.
   const choices =
     candidate && !STARTERS.some((p) => p.id === candidate.id)
       ? [candidate, ...STARTERS]

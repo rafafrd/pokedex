@@ -1,4 +1,5 @@
 export const TRAINER_STORAGE_KEY = "pokedex.trainer.v1";
+// Mantemos a chave antiga só p/ recuperar o nome de quem já usava o mobile.
 export const LEGACY_TRAINER_NAME_KEY = "pokedex.preferences.userName";
 export const TRAINER_AVATARS = [
   { id: "cap", emoji: "🧢", label: "Treinador" },
@@ -36,6 +37,7 @@ export const defaultTrainer = (): TrainerProfile => ({
 export const trainerAvatar = (profile: TrainerProfile) =>
   TRAINER_AVATARS.find((a) => a.id === profile.avatar)!;
 export function validateTrainer(value: unknown): TrainerProfile {
+  // A tela pode mandar um rascunho; aqui garantimos limites e opções válidas.
   if (!value || typeof value !== "object")
     throw new Error("Perfil inválido. Seus dados foram preservados.");
   const profile = value as Partial<TrainerProfile>;
@@ -69,6 +71,7 @@ export function parseTrainer(
   raw: string | null,
   legacyName: string | null = null,
 ): TrainerProfile {
+  // Sem perfil v1, aproveitamos o nome antigo. JSON inválido não é zerado em silêncio.
   if (raw === null)
     return {
       ...defaultTrainer(),
@@ -140,6 +143,7 @@ export class TrainerStore {
     }
   };
   save = async (draft: TrainerProfile): Promise<boolean> => {
+    // Publica o perfil na UI só depois da gravação; se falhar, o rascunho fica na tela.
     if (!this.snapshot.ready || this.snapshot.busy) return false;
     this.update({ busy: true, error: null });
     try {

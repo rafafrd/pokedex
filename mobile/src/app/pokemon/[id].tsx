@@ -14,6 +14,7 @@ import {
 } from "@/theme";
 
 function routeId(value: string | string[] | undefined) {
+  // URL é entrada externa: aceito só id numérico antes de consultar a API.
   const id = Array.isArray(value) ? value[0] : value;
   return id && /^\d+$/.test(id) ? id : null;
 }
@@ -25,6 +26,7 @@ export default function PokemonDetailRoute() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const pokemonId = routeId(id);
   const query = useQuery({
+    // A ficha tem consulta própria; não depende de o usuário ter vindo da lista.
     queryKey: ["pokemon", "detail", pokemonId],
     enabled: Boolean(pokemonId),
     queryFn: ({ signal }) => getPokemon(pokemonId!, signal),
@@ -58,9 +60,7 @@ export default function PokemonDetailRoute() {
     );
   }
 
-  // Route parameters are only a catalogue hint. The freshly fetched payload is
-  // the authority: validate its primary type before allowing a themed detail
-  // screen to mount, so a stale or forged URL cannot select the wrong palette.
+  // O tipo da URL é só dica; a resposta atual da API manda na cor da ficha.
   const primaryType = query.data.types.find((type) => type.trim().length > 0);
   if (!primaryType || normalizePokemonTypeTheme(primaryType) === "unknown") {
     return (

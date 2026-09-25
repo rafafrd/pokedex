@@ -15,6 +15,7 @@ export interface AppThemePalette {
   heroEnd: string;
 }
 
+// Paleta nativa: componentes RN recebem cor em hex, sem variáveis CSS.
 export const appThemes: Record<AppThemeName, AppThemePalette> = {
   gengar: {
     name: "gengar",

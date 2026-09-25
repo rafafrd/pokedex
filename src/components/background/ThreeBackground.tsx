@@ -420,13 +420,12 @@ function createEnvironmentMap(): THREE.CanvasTexture {
 }
 
 /**
- * Fixed, full-viewport WebGL layer with floating Pokéball spheres drifting
- * behind the UI. Mounts the Three.js scene exactly once (empty deps effect)
- * and re-tints lights/fog/shadows on theme change without rebuilding
- * anything — every ref exists purely to avoid re-renders driving the render
- * loop.
+ * Fundo 3D fica atrás da UI. Montamos a cena 1 vez e animamos via refs;
+ * o tema só repinta luzes/neblina, sem reconstruir as 16 Pokébolas.
+ * No cleanup libero geometria, texturas e renderer p/ não acumular GPU.
  */
 export function ThreeBackground({ theme }: ThreeBackgroundProps) {
+  // Refs seguram cena/renderer fora do estado React: animação não pede render da página.
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -638,6 +637,7 @@ export function ThreeBackground({ theme }: ThreeBackgroundProps) {
     window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
+      // Sem dispose, cada ida/volta ao módulo deixaria textura e GPU ocupadas.
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       if (animationFrameRef.current !== null) {
@@ -675,9 +675,7 @@ export function ThreeBackground({ theme }: ThreeBackgroundProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-tint lighting, fog and shadow color when the theme changes, without
-  // rebuilding the scene. The key light stays near-white so the shells keep
-  // their own colors — only the fill, rim and shadows carry the theme.
+  // Tema muda luz, neblina e sombra; não recriamos as Pokébolas.
   useEffect(() => {
     const isGengar = theme.name === "gengar";
 

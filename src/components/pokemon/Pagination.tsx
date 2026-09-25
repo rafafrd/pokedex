@@ -11,6 +11,7 @@ interface PaginationProps {
 const MAX_VISIBLE_PAGES = 5;
 
 export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+  // Janela de até 5 números; ex.: na pág. 8 mostramos 6, 7, 8, 9, 10.
   const pageNumbers = useMemo(() => {
     if (totalPages <= MAX_VISIBLE_PAGES) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);

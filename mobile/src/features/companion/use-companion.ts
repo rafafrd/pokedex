@@ -11,6 +11,7 @@ export function useCompanion() {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     void companionStore.hydrate();
+    // Ao voltar do background, releio o save e projeto o tempo q passou.
     const timer = setInterval(() => setNow(Date.now()), 1000);
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {

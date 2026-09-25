@@ -46,6 +46,7 @@ function ActionButton({
   disabled?: boolean;
   secondary?: boolean;
 }) {
+  // @expo/ui desenha o botão nativo; Host recebe as cores do tema atual.
   const { appTheme } = usePreferences();
   const theme = getAppTheme(appTheme);
   return (
@@ -123,6 +124,7 @@ export function CompanionScreen() {
   const theme = getAppTheme(appTheme);
   const { save, ready, busy, error, message, now, execute, reload } =
     useCompanion();
+  // O Pokémon escolhido na ficha chega pela rota; validamos antes de oferecer adoção.
   const [candidate] = useState<CompanionPokemon | null>(() => {
     const id = Number(params.pokemonId);
     return Number.isSafeInteger(id) &&
@@ -137,6 +139,7 @@ export function CompanionScreen() {
   const [nickname, setNickname] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState("");
+  // Mesmo cálculo da web: o tempo corre enquanto o app está fechado.
   const pet = activeCompanion(save, now);
   const panel = [
     styles.panel,
@@ -164,6 +167,7 @@ export function CompanionScreen() {
     }
   };
   const adopt = async () => {
+    // Sem sucesso na store, mantemos o formulário p/ corrigir ou tentar de novo.
     if (await execute({ type: "adopt", pokemon: selected, nickname })) {
       setChoosing(false);
       setNickname("");
@@ -175,6 +179,7 @@ export function CompanionScreen() {
   const bond = pet ? bondProgress(pet.xp) : null;
   const mood = pet ? companionMood(pet) : null;
   const favorite = pet ? favoriteBerry(pet.pokemon.id) : null;
+  // Contagem regressiva é só visual; o bloqueio real fica em shared/companion.ts.
   const forageRemaining =
     save.lastForageAt === null
       ? 0

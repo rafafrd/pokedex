@@ -17,7 +17,7 @@ export interface TypeBadgeProps {
   textStyle?: StyleProp<TextStyle>;
 }
 
-/** A compact, accessible type chip used throughout the Pokédex. */
+/** Selo de tipo reutilizável; ex.: "fire" recebe cor e nome legíveis. */
 export function TypeBadge({ type, style, textStyle }: TypeBadgeProps) {
   const label = formatPokemonType(type);
 

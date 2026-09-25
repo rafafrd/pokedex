@@ -30,6 +30,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 function App() {
   const { theme, setTheme, toggleTheme, palette, themeError } = useTheme();
   const trainer = useTrainer();
+  // Hash simples mantém os módulos navegáveis por URL, ex.: /#companion.
   const readModule = () =>
     window.location.hash === "#companion"
       ? "companion"
@@ -49,7 +50,7 @@ function App() {
     setModule(next);
   };
 
-  // --- useState: primitives driving both browsing and search modes -------
+  // Lista e busca usam estados separados: página p/ catálogo, texto p/ consulta direta.
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(ITEMS_PER_PAGE);
@@ -70,7 +71,7 @@ function App() {
     clearSelection,
   } = usePokeApi();
 
-  // --- useEffect: paginated grid fetch (Mode A), aborted on fast page flips.
+  // Mudou a página? Cancelo o pedido anterior p/ ele não chegar depois e trocar a lista.
   useEffect(() => {
     if (isSearchMode) return;
 
@@ -79,7 +80,7 @@ function App() {
     return () => controller.abort();
   }, [currentPage, itemsPerPage, isSearchMode, fetchList]);
 
-  // --- useEffect: debounced id/name lookup (Mode B), aborted on retype.
+  // Ex.: digitou "pika" e seguiu p/ "pikachu": só a busca atual deve valer.
   useEffect(() => {
     const trimmed = debouncedQuery.trim();
     if (!trimmed) {
@@ -92,7 +93,7 @@ function App() {
     return () => controller.abort();
   }, [debouncedQuery, fetchByQuery, clearSelection]);
 
-  // --- useMemo: pagination metrics + in-memory list ordering.
+  // A API traz o total; daqui saem as páginas e a ordem estável dos cartões.
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalCount / itemsPerPage)),
     [totalCount, itemsPerPage],

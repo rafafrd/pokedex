@@ -449,7 +449,7 @@ const normalizedAliases: Readonly<Record<string, PokemonTypeKey>> = {
   unknown: "unknown",
 };
 
-/** Normalizes values from PokeAPI and returns `unknown` for an invalid type. */
+/** Ex.: "electric" mantém a cor certa; tipo inválido cai em "unknown". */
 export function normalizePokemonTypeTheme(
   type: string | null | undefined,
 ): PokemonTypeKey {

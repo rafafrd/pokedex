@@ -19,7 +19,7 @@ interface BallPlacement {
   rotationSpeed: number;
 }
 
-/** A deliberately small set keeps the background friendly to mobile GPUs. */
+/** Poucas Pokébolas p/ não pesar na GPU do celular. */
 const BALL_PLACEMENTS: readonly BallPlacement[] = [
   {
     variant: "great",
@@ -84,6 +84,7 @@ function Pokeball({
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
+    // Atualizo a malha direto no frame; React não precisa renderizar 60x/s.
     const group = groupRef.current;
     if (!group || reducedMotion) {
       return;
@@ -263,12 +264,8 @@ export interface PokeballFlightBackgroundProps {
 }
 
 /**
- * Procedural WebGPU Pokéball background for a Pokémon detail view.
- *
- * No texture or remote asset is required: each Poke/Great/Ultra Ball is a
- * handful of low-poly hemispheres, rings, and button geometry. The scene keeps
- * its animation in `useFrame` refs so React never receives per-frame state
- * updates.
+ * Fundo WebGPU da ficha: sem textura da rede; cada bola usa geometria simples.
+ * A animação fica nas refs do useFrame, sem re-renderizar React a cada frame.
  */
 export function PokeballFlightBackground({
   palette,

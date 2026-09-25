@@ -6,6 +6,7 @@ import { PreferencesProvider, usePreferences } from "@/features/preferences";
 import { getAppTheme } from "@/theme";
 
 const queryClient = new QueryClient({
+  // Dados recentes ficam 5 min frescos; falha de rede ganha até 2 tentativas.
   defaultOptions: {
     queries: {
       retry: 2,
@@ -26,8 +27,7 @@ function AppNavigator() {
   const { appTheme, isHydrated } = usePreferences();
   const palette = getAppTheme(appTheme);
 
-  // The persisted preference must win over the default before the catalogue
-  // mounts, otherwise the app flashes the wrong visual theme on launch.
+  // Esperamos o tema salvo antes de montar as telas p/ evitar um flash da paleta errada.
   if (!isHydrated) return null;
 
   return (

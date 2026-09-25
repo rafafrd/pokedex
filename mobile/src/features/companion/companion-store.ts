@@ -2,6 +2,7 @@ import AsyncStorage from "@/lib/storage";
 import { CompanionStore } from "../../../../shared/companion";
 
 export const companionStore = new CompanionStore({
+  // Traduz erro de storage p/ mensagem útil; a regra do pet continua em shared/.
   getItem: async (key) => {
     try {
       return await AsyncStorage.getItem(key);

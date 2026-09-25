@@ -5,6 +5,7 @@ import {
 } from "../../../shared/companion";
 
 const store = new CompanionStore({
+  // Adaptador web: o domínio conhece só getItem/setItem, não o localStorage.
   getItem: async (key) => {
     try {
       return localStorage.getItem(key);
@@ -24,6 +25,7 @@ const store = new CompanionStore({
     }
   },
   exclusive: async (work) => {
+    // Se houver Web Locks, duas abas não gastam a mesma fruta ao mesmo tempo.
     if (navigator.locks)
       await navigator.locks.request(COMPANION_STORAGE_KEY, work);
     else await work();
@@ -35,12 +37,14 @@ export function useCompanion() {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     void store.hydrate();
+    // O relógio atualiza contagens na tela; os atributos vêm de advanceCompanion.
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     const refresh = () => {
       setNow(Date.now());
       void store.hydrate();
     };
     const sync = (event: StorageEvent) => {
+      // Outra aba salvou? Recarrego o save p/ esta aba refletir a mudança.
       if (event.key === COMPANION_STORAGE_KEY || event.key === null) refresh();
     };
     window.addEventListener("focus", refresh);

@@ -1,4 +1,4 @@
-/** Platform-independent pet rules. No React, network, or storage dependencies. */
+/** Regras do pet ficam aqui: web e mobile só mandam comandos. Sem React/API neste arquivo. */
 export const COMPANION_STORAGE_KEY = "pokedex.companion.v1";
 export const BERRIES = [
   {
@@ -54,6 +54,7 @@ export const STARTERS: CompanionPokemon[] = [
   { id: 94, name: "Gengar" },
 ];
 export const BOND_LEVELS = [
+  // XP acumulado libera o próximo nível; ex.: 60 XP já vira "Amigos".
   { name: "Primeiros laços", xp: 0 },
   { name: "Amigos", xp: 60 },
   { name: "Grandes amigos", xp: 180 },
@@ -166,6 +167,7 @@ export function normalizeNickname(value: string): string {
   return name;
 }
 export function localDay(now: number): string {
+  // Cesta diária usa o dia local do jogador, não UTC (q pode virar antes no Brasil).
   const d = new Date(now);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
@@ -173,7 +175,7 @@ export function countdown(milliseconds: number): string {
   const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
-/** Project elapsed time, including the portion spent sleeping while the app was closed. */
+/** Projeta o tempo q passou, até com o app fechado. Não precisa rodar timer em background. */
 export function advanceCompanion(pet: Companion, now: number): Companion {
   const at = Math.max(pet.updatedAt, now);
   const elapsed = at - pet.updatedAt;
@@ -181,6 +183,7 @@ export function advanceCompanion(pet: Companion, now: number): Companion {
     pet.sleepingUntil === null
       ? 0
       : Math.max(0, Math.min(at, pet.sleepingUntil) - pet.updatedAt);
+  // Só o tempo acordado gasta energia; a soneca recupera até 45 em 1 min.
   return {
     ...pet,
     updatedAt: at,
@@ -218,6 +221,7 @@ export function bondProgress(xp: number) {
   };
 }
 export function trainerProgress(save: CompanionSave) {
+  // Badges são derivados do save real. Ex.: 10 refeições => "Mesa farta".
   const companions = save.companions.length;
   const care = save.companions.reduce((sum, pet) => sum + pet.careCount, 0);
   const meals = save.companions.reduce((sum, pet) => sum + pet.meals, 0);
@@ -293,6 +297,7 @@ export function careBlockedReason(
   action: CareAction,
   now: number,
 ): string | null {
+  // Validamos aqui tb, não só no botão: chamada direta à store deve respeitar cooldown.
   now = Math.max(now, pet.updatedAt);
   if (pet.sleepingUntil)
     return `Acorda em ${countdown(pet.sleepingUntil - now)}`;
@@ -319,6 +324,7 @@ export function applyCommand(
   command: CompanionCommand,
   now: number,
 ): { save: CompanionSave; message: string } {
+  // Um comando entra, um novo save sai. Primeiro aplicamos o tempo decorrido em todos.
   let save: CompanionSave = {
     ...original,
     inventory: { ...original.inventory },
@@ -373,6 +379,7 @@ export function applyCommand(
   if (!pet) throw new Error("Escolha seu primeiro companheiro para começar.");
   now = pet.updatedAt;
   if (command.type === "basket") {
+    // A sequência só continua se a última cesta foi ontem no relógio local.
     const today = localDay(now);
     if (save.lastBasketDay && save.lastBasketDay >= today)
       throw new Error("A cesta de hoje já foi coletada. Volte amanhã!");
@@ -389,6 +396,7 @@ export function applyCommand(
     return done("Cesta coletada: 5 Oran, 3 Pecha e 2 Sitrus!");
   }
   if (command.type === "forage") {
+    // Pomar repõe o estoque comum, então trocar de pet não duplica frutas.
     if (save.lastForageAt !== null && now - save.lastForageAt < FORAGE_COOLDOWN)
       throw new Error(
         `Novas frutas em ${countdown(FORAGE_COOLDOWN - (now - save.lastForageAt))}.`,
@@ -409,6 +417,7 @@ export function applyCommand(
     if (blocked) throw new Error(blocked);
     let xp = 0;
     if (command.type === "feed") {
+      // Fruta favorita dá +6 XP; estoque só vira definitivo após a store gravar.
       const berry = BERRIES.find((b) => b.id === command.berry);
       if (!berry || save.inventory[berry.id] < 1)
         throw new Error(
@@ -467,6 +476,7 @@ export function applyCommand(
       message = `${pet.nickname} vai tirar uma soneca de 1 minuto.`;
     }
     const oldLevel = bondProgress(pet.xp).level;
+    // Contadores alimentam as conquistas do treinador; renomear não conta como cuidado.
     pet = {
       ...pet,
       xp: pet.xp + xp,
@@ -483,7 +493,7 @@ export function applyCommand(
   return done(message);
 }
 
-/** Reject unsupported or damaged saves instead of silently discarding the user's pets. */
+/** Save estranho? Bloqueamos a edição p/ não sobrescrever os pets do jogador. */
 export function parseSave(raw: string | null): CompanionSave {
   if (raw === null) return emptySave();
   const invalid = () => {
@@ -497,6 +507,7 @@ export function parseSave(raw: string | null): CompanionSave {
   } catch {
     return invalid();
   }
+  // Save vem de storage e pode ter sido editado/corrompido: checo a "casca" v1.
   const record = (v: unknown): v is Record<string, unknown> =>
     !!v && typeof v === "object" && !Array.isArray(v);
   const number = (v: unknown): v is number =>
@@ -521,6 +532,7 @@ export function parseSave(raw: string | null): CompanionSave {
     !(value.lastForageAt === null || timestamp(value.lastForageAt))
   )
     return invalid();
+  // Agora cada pet: IDs únicos, atributos 0..100 e histórico limitado.
   const ids = new Set<number>();
   for (const pet of value.companions) {
     if (
@@ -563,6 +575,7 @@ export function parseSave(raw: string | null): CompanionSave {
       return invalid();
     ids.add(pet.pokemon.id);
   }
+  // activeId tem q apontar p/ um pet existente; sem pets, fica null.
   if (
     value.companions.length
       ? !integer(value.activeId) || !ids.has(value.activeId)
@@ -584,7 +597,7 @@ export interface CompanionSnapshot {
   error: string | null;
   message: string;
 }
-/** A failed write does not consume fruit or award points. Operations are serialized. */
+/** A store serializa ações; falha ao gravar não gasta fruta nem concede XP. */
 export class CompanionStore {
   private storage: CompanionStorage;
   private listeners = new Set<() => void>();
@@ -633,6 +646,7 @@ export class CompanionStore {
     let success = false;
     try {
       const work = async () => {
+        // Releio antes de agir p/ usar a versão mais recente (ex.: outra aba atualizou).
         const latest = parseSave(
           await this.storage.getItem(COMPANION_STORAGE_KEY),
         );

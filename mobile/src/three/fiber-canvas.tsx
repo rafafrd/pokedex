@@ -13,9 +13,7 @@ import * as THREE from "three/webgpu";
 
 import { makeWebGPURenderer, ReactNativeCanvas } from "./make-webgpu-renderer";
 
-// R3F's catalogue is built from the regular Three entrypoint. Registering the
-// low-poly primitives explicitly keeps the native renderer's JSX path stable
-// when Metro resolves `three` to `three/webgpu`.
+// Registro as primitivas p/ R3F entender o Three/WebGPU resolvido pelo Metro.
 extend({
   AmbientLight: THREE.AmbientLight,
   DirectionalLight: THREE.DirectionalLight,
@@ -40,11 +38,8 @@ export interface FiberCanvasProps {
 }
 
 /**
- * Small R3F host for `react-native-wgpu`.
- *
- * Keeping this bridge local to the three module means screens only deal with a
- * normal React component and never need to know about the native canvas
- * adapter or the WebGPU `present()` call.
+ * Ponte entre R3F e o canvas nativo do react-native-wgpu.
+ * A ficha renderiza <FiberCanvas>; setup, resize e present() ficam aqui.
  */
 export function FiberCanvas({
   children,
@@ -104,6 +99,7 @@ export function FiberCanvas({
             }
 
             const renderFrame = webgpuRenderer.render.bind(webgpuRenderer);
+            // No nativo, renderizar não exibe sozinho: present() entrega o frame à tela.
             webgpuRenderer.render = (scene, camera) => {
               const result = renderFrame(scene, camera);
               context.present();
@@ -111,9 +107,7 @@ export function FiberCanvas({
             };
           })
           .catch(() => {
-            // A custom build is required for WebGPU. If device setup is not
-            // available yet, leave the host mounted so a later remount can
-            // retry without taking down the surrounding detail screen.
+            // WebGPU pede build compatível. Se falhar, preservo a ficha p/ nova tentativa.
           });
       },
     });
@@ -126,9 +120,7 @@ export function FiberCanvas({
     };
   }, []);
 
-  // R3F owns this child tree after the native renderer is configured. Rendering
-  // the latest element here lets palette and reduced-motion props update
-  // without rebuilding the native surface or the renderer.
+  // R3F atualiza paleta/reduced-motion sem reconstruir o renderer nativo.
   useEffect(() => {
     rootRef.current?.render(children);
   }, [children]);

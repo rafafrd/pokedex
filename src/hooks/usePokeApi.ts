@@ -29,11 +29,9 @@ function isAbortError(error: unknown): boolean {
 }
 
 /**
- * Data access layer for the PokeAPI. Keeps `App.tsx` free of fetch plumbing:
- * it owns loading/error/result state for both the paginated grid (Mode A)
- * and the direct id/name lookup (Mode B), and every request accepts an
- * `AbortSignal` so callers can cancel stale requests from a `useEffect`
- * cleanup function (fast page flips, fast typing, unmounts).
+ * Centralizo fetch + loading/erro aqui p/ App.tsx cuidar da navegação.
+ * Lista e busca direta aceitam AbortSignal: se o usuário trocar de página ou
+ * continuar digitando, a resposta velha não deve sobrescrever a nova.
  */
 export function usePokeApi() {
   const [pokemonList, setPokemonList] = useState<PokemonDetail[]>([]);
@@ -57,6 +55,7 @@ export function usePokeApi() {
         if (!listRes.ok) throw new Error("list-error");
         const listData: PokeApiListResponse = await listRes.json();
 
+        // A lista vem com nome/URL; buscamos cada ficha em paralelo p/ ter tipo e sprite.
         const details = await Promise.all(
           listData.results.map(async (entry) => {
             const res = await fetch(entry.url, { signal });
@@ -82,6 +81,7 @@ export function usePokeApi() {
 
   const fetchByQuery = useCallback(
     async (query: string, signal?: AbortSignal) => {
+      // Nome ou nº usam o mesmo endpoint: /pokemon/pikachu ou /pokemon/25.
       const normalized = query.trim().toLowerCase();
       if (!normalized) return;
 

@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { TrainerStore, TRAINER_STORAGE_KEY } from "../../../shared/trainer";
 
 const store = new TrainerStore({
+  // Mesmo contrato do mobile, mas aqui a gravação é no navegador.
   getItem: async (key) => {
     try {
       return localStorage.getItem(key);
@@ -26,6 +27,7 @@ export function useTrainer() {
   useEffect(() => {
     void store.hydrate();
     const sync = (event: StorageEvent) => {
+      // Perfil alterado em outra aba entra aqui sem recarregar a página inteira.
       if (event.key === TRAINER_STORAGE_KEY || event.key === null)
         void store.hydrate();
     };

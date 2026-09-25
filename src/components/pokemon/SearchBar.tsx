@@ -7,11 +7,7 @@ interface SearchBarProps {
   inputRef: RefObject<HTMLInputElement>;
 }
 
-/**
- * Free-text id/name search. `inputRef` is a plain DOM ref (no re-render
- * involved) so the global "/" shortcut and the quick-search button can both
- * call `.focus()` imperatively, the canonical `useRef` use case.
- */
+/** Busca por nome/nº. O ref foca o input com "/" sem mexer no estado React. */
 export function SearchBar({ value, onChange, inputRef }: SearchBarProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -22,6 +18,7 @@ export function SearchBar({ value, onChange, inputRef }: SearchBarProps) {
         target?.isContentEditable;
 
       if (event.key === "/" && !isTyping) {
+        // Não roubo a tecla se o usuário já estiver digitando em outro campo.
         event.preventDefault();
         inputRef.current?.focus();
       }

@@ -3,12 +3,7 @@ import type { ThemeName, ThemePalette } from "../types/pokemon";
 
 const STORAGE_KEY = "pokedex:theme";
 
-/**
- * Single source of truth for both themes. Colors mirror the CSS variables
- * declared in `src/index.css` under `[data-theme="…"]` so components that
- * need raw hex values (e.g. the Three.js background) stay in sync with the
- * ones painted by Tailwind/CSS.
- */
+/** Paletas em JS espelham as vars do CSS; o fundo 3D precisa das cores em hex. */
 export const THEMES: Record<ThemeName, ThemePalette> = {
   gengar: {
     name: "gengar",
@@ -46,17 +41,14 @@ function getInitialTheme(): ThemeName {
     /* Theme still works when browser storage is unavailable. */
   }
 
+  // Sem preferência salva, seguimos o tema claro/escuro do sistema.
   const prefersLight = window.matchMedia?.(
     "(prefers-color-scheme: light)",
   ).matches;
   return prefersLight ? "mewtwo" : "gengar";
 }
 
-/**
- * Global theme manager: persists the active theme in localStorage and
- * reflects it onto `<html data-theme="...">` so every CSS variable in
- * index.css updates instantly, with no re-render cost for pure-CSS consumers.
- */
+/** Troca data-theme no <html>; os componentes CSS repintam sem estado extra. */
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeName>(getInitialTheme);
   const [themeError, setThemeError] = useState<string | null>(null);
@@ -77,8 +69,7 @@ export function useTheme() {
     setTheme((current) => (current === "gengar" ? "mewtwo" : "gengar"));
   }, []);
 
-  // Memoized so consumers (e.g. ThreeBackground) can safely depend on the
-  // palette object identity without re-running effects every render.
+  // Mesma referência evita reiniciar efeitos do ThreeBackground a cada render.
   const palette = useMemo(() => THEMES[theme], [theme]);
 
   return { theme, setTheme, toggleTheme, palette, themeError };

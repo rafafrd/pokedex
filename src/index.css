@@ -3,17 +3,10 @@
 @tailwind utilities;
 
 /*
- * Theme tokens. `useTheme` sets `data-theme` on <html>; every color below
- * is read by Tailwind via `tailwind.config.js` (colors.* -> var(--color-*))
- * so both plain CSS and Tailwind utility classes stay in sync.
- *
- * Values are stored as "R G B" channel triples (not hex) so Tailwind's
- * opacity modifiers work (`bg-surface/40` compiles to
- * `rgb(var(--color-surface) / 0.4)` — that only produces valid CSS when the
- * variable holds bare numbers). Wrap any raw usage in plain CSS with
- * `rgb(...)`, as done below.
- *
- * Default (no data-theme yet, first paint) mirrors Gengar to avoid a flash.
+ * useTheme troca data-theme no <html>; Tailwind e CSS leem as mesmas cores.
+ * Guardamos canais RGB separados pq bg-surface/40 precisa aplicar opacidade:
+ * ex.: rgb(var(--color-surface) / 0.4). Em CSS puro, envolva a var em rgb().
+ * O padrão já é Gengar p/ o 1º paint não piscar com a paleta errada.
  */
 :root {
   --color-bg-1: 26 5 38; /* #1A0526 */

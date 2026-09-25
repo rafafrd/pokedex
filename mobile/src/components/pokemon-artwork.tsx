@@ -48,6 +48,7 @@ export function PokemonArtwork({
   style,
   sprites,
 }: PokemonArtworkProps) {
+  // Se a URL da arte falhar, caímos nas iniciais p/ não deixar um buraco no card.
   const [hasError, setHasError] = useState(false);
   const displayName = formatName(name);
   const resolvedUri =

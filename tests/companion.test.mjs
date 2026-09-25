@@ -17,6 +17,7 @@ import {
   REST_DURATION,
 } from "../shared/companion.ts";
 
+// Relógio fixo deixa cooldown, soneca e virada do dia previsíveis nos testes.
 const start = new Date(2026, 8, 25, 12).getTime();
 const pokemon = { id: 25, name: "pikachu" };
 const adopted = () =>

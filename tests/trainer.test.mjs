@@ -16,6 +16,7 @@ import {
   favoriteBerry,
 } from "../shared/companion.ts";
 
+// Ex.: perfil novo recupera "Misty" da chave antiga do mobile sem perder o nome.
 test("profile migrates the existing mobile name without resetting preferences", () => {
   assert.equal(parseTrainer(null, "  Misty  ").name, "Misty");
   assert.equal(parseTrainer(null).region, "Kanto");

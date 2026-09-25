@@ -28,9 +28,7 @@ export function PokemonGrid({
   page,
   onSelect,
 }: PokemonGridProps) {
-  // Tracks the previous page so the grid slides toward the direction the
-  // user is paging in (forward → enters from the right, back → from the
-  // left), instead of always sliding the same way.
+  // Guardo a pág. anterior p/ animar no sentido certo: voltar entra pela esquerda.
   const prevPageRef = useRef(page);
   const direction = page < prevPageRef.current ? -1 : 1;
   prevPageRef.current = page;

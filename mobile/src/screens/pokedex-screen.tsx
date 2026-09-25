@@ -114,6 +114,7 @@ export function PokedexScreen() {
   const [selectionError, setSelectionError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Segura 300 ms: evita buscar "p", "pi", "pik" antes de "pikachu".
     const timeoutId = setTimeout(
       () => setDebouncedSearch(search.trim().toLowerCase()),
       SEARCH_DELAY_MS,
@@ -122,6 +123,7 @@ export function PokedexScreen() {
   }, [search]);
 
   const isSearching = debouncedSearch.length > 0;
+  // Chaves distintas deixam o cache da página separado do cache da pesquisa.
   const pageQuery = useQuery({
     queryKey: ["pokemon", "page", page],
     enabled: !isSearching,
@@ -150,6 +152,7 @@ export function PokedexScreen() {
   const isEmpty = !isInitialLoad && !activeQuery.isError && filteredPokemon.length === 0;
 
   const handleSelect = (pokemon: PokemonSummary) => {
+    // A ficha usa o tipo p/ escolher a paleta; sem tipo válido, não navegamos.
     // The catalogue already carries the type from PokeAPI. Never open a detail
     // route until this payload has a valid type; the detail route validates the
     // freshly fetched type again before it renders the themed screen.

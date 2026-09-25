@@ -37,6 +37,7 @@ function formatName(name: string): string {
 
 /** A tappable, reusable summary tile for a Pokémon list or grid. */
 export function PokemonCard({ pokemon, onPress, index, style, theme }: PokemonCardProps) {
+  // Seleciono a melhor URL já mapeada; o card só apresenta o resumo.
   const displayName = formatName(pokemon.name);
   const artworkUri = getBestPokemonSpriteUrl(pokemon.sprites);
   const typeLabels = pokemon.types?.map(formatPokemonType).join(", ") || "Unknown type";

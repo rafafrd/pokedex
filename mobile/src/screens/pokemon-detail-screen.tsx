@@ -127,6 +127,7 @@ export function PokemonDetailScreen({
   theme,
   onBack,
 }: PokemonDetailScreenProps) {
+  // A ficha recebe um Pokémon já validado pela rota e só cuida da exibição.
   const reducedMotion = useReducedMotionPreference();
   const router = useRouter();
 

@@ -25,6 +25,7 @@ export function TrainerView({
   themeError: string | null;
 }) {
   const companion = useCompanion();
+  // Conquistas não são flags soltas: vêm dos contadores do save dos pets.
   const stats = trainerProgress(companion.save);
   return (
     <section
@@ -134,6 +135,7 @@ function TrainerForm({
   themeError: string | null;
 }) {
   const [draft, setDraft] = useState<TrainerProfile>(trainer.profile);
+  // Editar muda só a prévia; o perfil oficial troca ao clicar em salvar.
   const [saved, setSaved] = useState(false);
   const edit = (patch: Partial<TrainerProfile>) => {
     setDraft((current) => ({ ...current, ...patch }));

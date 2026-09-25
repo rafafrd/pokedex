@@ -1,3 +1,4 @@
+/* Escopo do pet: tokens próprios sem mexer na paleta global da Pokédex. */
 .companion-module {
   --pet-green: #74b99d;
   --pet-pink: #ed92ad;

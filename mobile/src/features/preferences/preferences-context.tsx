@@ -22,6 +22,7 @@ export const PREFERENCES_STORAGE_KEYS = {
 } as const;
 
 const trainerStore = new TrainerStore({
+  // O perfil usa a mesma store do web; só trocamos o adaptador de storage.
   getItem: async (key) => {
     try {
       return await AsyncStorage.getItem(key);
@@ -72,6 +73,7 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   const savingTheme = useRef(false);
   useEffect(() => {
     let mounted = true;
+    // Tema e perfil carregam juntos, mas uma falha não esconde o resultado do outro.
     void Promise.allSettled([
       AsyncStorage.getItem(PREFERENCES_STORAGE_KEYS.appTheme),
       trainerStore.hydrate(),
@@ -88,6 +90,7 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   }, []);
 
   const setAppTheme = useCallback(async (next: AppTheme) => {
+    // Persisto antes de aplicar: se falhar, a UI não finge q salvou o tema.
     if (savingTheme.current) return;
     savingTheme.current = true;
     setSaveError(null);
@@ -105,6 +108,7 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
   }, []);
 
   const setUserName = useCallback(async (name: string) => {
+    // Compatibilidade com telas antigas: nome agora mora no perfil versionado.
     const result = await trainerStore.save({
       ...trainerStore.getSnapshot().profile,
       name: name.trim() || DEFAULT_USER_NAME,

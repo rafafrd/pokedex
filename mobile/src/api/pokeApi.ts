@@ -125,6 +125,7 @@ function readArray(value: unknown, field: string, endpoint: string): unknown[] {
 }
 
 async function fetchJson(endpoint: string, signal?: AbortSignal): Promise<unknown> {
+  // Toda chamada passa aqui p/ tratar rede, HTTP e JSON inválido do mesmo jeito.
   let response: Response;
 
   try {
@@ -383,6 +384,7 @@ function parsePokemonResponse(
   payload: unknown,
   endpoint: string,
 ): PokeApiPokemonResponse {
+  // A API é externa: validamos o payload antes de deixar ele entrar nas telas.
   if (!isRecord(payload)) return invalidResponse(endpoint);
 
   return {
@@ -483,6 +485,7 @@ export function mapPokeApiDetail(raw: PokeApiPokemonResponse): PokemonDetail {
 export async function listPokemon(
   options: ListPokemonOptions = {},
 ): Promise<PokemonListPage> {
+  // A listagem só traz nome/URL. Detalhes em paralelo completam tipo e sprite.
   const limit = options.limit ?? DEFAULT_POKEMON_LIMIT;
   const offset = options.offset ?? 0;
 
@@ -516,6 +519,7 @@ export async function getPokemon(
   idOrName: string | number,
   signal?: AbortSignal,
 ): Promise<PokemonDetail> {
+  // Ex.: "Pikachu" vira /pokemon/pikachu; 25 vira /pokemon/25.
   const value = typeof idOrName === "number" ? String(idOrName) : idOrName.trim().toLowerCase();
 
   if (value.length === 0) {

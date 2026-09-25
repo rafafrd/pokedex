@@ -20,7 +20,7 @@ const STAT_LABELS: Record<string, string> = {
 
 const MAX_STAT_SCALE = 180;
 
-/** Mode B: direct id/name lookup with full telemetry for one Pokémon. */
+/** Ficha da busca direta; medidas da API vêm em décimos (altura/10 = metros). */
 export function PokemonDetailView({
   pokemon,
   onBack,

@@ -1,4 +1,4 @@
-/** Browser storage keeps Expo web free of SQLite's native/WASM requirements. */
+/** Expo web grava no localStorage, sem carregar SQLite/WASM no browser. */
 const storage = {
   getItem: async (key: string) =>
     typeof window === "undefined" ? null : window.localStorage.getItem(key),

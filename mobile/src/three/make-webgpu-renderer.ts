@@ -2,9 +2,8 @@ import type { NativeCanvas, RNCanvasContext } from "react-native-wgpu";
 import * as THREE from "three/webgpu";
 
 /**
- * The WebGPU renderer expects a DOM-like canvas. `react-native-wgpu` exposes a
- * small native surface instead, so this adapter supplies only the canvas
- * properties Three reads during setup and resize.
+ * Three espera um canvas tipo DOM, mas o WGPU fornece uma superfície nativa.
+ * Este adaptador expõe só tamanho e eventos q o renderer usa no setup/resize.
  */
 export class ReactNativeCanvas {
   public constructor(private readonly nativeCanvas: NativeCanvas) {}
@@ -54,7 +53,7 @@ export class ReactNativeCanvas {
   public releasePointerCapture(_pointerId?: number): void {}
 }
 
-/** Creates the Three WebGPU renderer for a native `react-native-wgpu` surface. */
+/** Cria o renderer WebGPU usando o canvas adaptado acima. */
 export function makeWebGPURenderer(
   context: RNCanvasContext,
   options: { antialias?: boolean } = {},

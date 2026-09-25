@@ -36,12 +36,14 @@ export function TrainerScreen() {
   const theme = getAppTheme(appTheme);
   const insets = useSafeAreaInsets();
   const companion = useCompanion();
+  // Badges vêm dos cuidados já salvos, não de estado separado na tela.
   const stats = trainerProgress(companion.save);
   const [draft, setDraft] = useState(trainerProfile);
   const [initialized, setInitialized] = useState(false);
   const [saved, setSaved] = useState(false);
   const [themeBusy, setThemeBusy] = useState(false);
   useEffect(() => {
+    // Copio o perfil carregado uma vez; editar o rascunho não altera o salvo.
     if (trainerReady && !initialized) {
       setDraft(trainerProfile);
       setInitialized(true);
@@ -52,14 +54,16 @@ export function TrainerScreen() {
     setSaved(false);
   };
   const save = async () => {
+    // Ex.: avatar + região só aparecem como perfil salvo após esta chamada.
     setSaved(await saveTrainerProfile(draft));
   };
   const changeTheme = async (value: AppTheme) => {
+    // Tema é preferência à parte; não precisa salvar o formulário inteiro.
     setThemeBusy(true);
     try {
       await setAppTheme(value);
     } catch {
-      /* The provider exposes the save error. */
+      /* O provider já expõe o erro de gravação p/ a tela. */
     } finally {
       setThemeBusy(false);
     }
