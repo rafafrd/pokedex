@@ -238,13 +238,13 @@ export function PokedexScreen() {
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Abrir configurações"
+                accessibilityLabel="Abrir perfil do treinador"
                 hitSlop={8}
                 onPress={() => router.push("/settings")}
                 style={({ pressed }) => [styles.settingsButton, pressed && styles.buttonPressed]}
               >
                 <Text selectable style={styles.settingsLabel}>
-                  Configurar
+                  Meu perfil
                 </Text>
               </Pressable>
             </View>
@@ -258,6 +258,30 @@ export function PokedexScreen() {
               Encontre e consulte seus Pokémon favoritos.
             </Text>
           </LinearGradient>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Abrir módulo de companheiro"
+            onPress={() => router.push("/companion")}
+            style={({ pressed }) => [
+              styles.companionLink,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={{ fontSize: 26 }}>💗</Text>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text
+                style={{ color: theme.text, fontWeight: "800", fontSize: 16 }}
+              >
+                Meu companheiro
+              </Text>
+              <Text style={{ color: theme.mutedText, fontSize: 12 }}>
+                Frutas, carinho e uma amizade para cuidar.
+              </Text>
+            </View>
+            <Text style={{ color: theme.accent, fontSize: 22 }}>→</Text>
+          </Pressable>
 
           <View
             style={[
@@ -387,6 +411,15 @@ export function PokedexScreen() {
 }
 
 const styles = StyleSheet.create({
+  companionLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 18,
+    borderWidth: 1,
+    borderRadius: 18,
+    marginBottom: spacing.lg,
+  },
   listContent: {
     flexGrow: 1,
     gap: spacing.md,

@@ -1,159 +1,155 @@
-import AsyncStorage from "expo-sqlite/kv-store";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
+  useSyncExternalStore,
   type PropsWithChildren,
 } from "react";
+import AsyncStorage from "@/lib/storage";
+import { TrainerStore, type TrainerProfile } from "../../../../shared/trainer";
 
 export type AppTheme = "gengar" | "mewtwo";
-
-/** Alias kept for consumers that prefer the more explicit theme name. */
 export type ThemeName = AppTheme;
-
 export const DEFAULT_USER_NAME = "Treinador";
 export const DEFAULT_APP_THEME: AppTheme = "gengar";
-
 export const PREFERENCES_STORAGE_KEYS = {
   userName: "pokedex.preferences.userName",
   appTheme: "pokedex.preferences.appTheme",
 } as const;
 
+const trainerStore = new TrainerStore({
+  getItem: async (key) => {
+    try {
+      return await AsyncStorage.getItem(key);
+    } catch {
+      throw new Error("Não foi possível carregar o perfil. Tente novamente.");
+    }
+  },
+  setItem: async (key, value) => {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch {
+      throw new Error(
+        "Não foi possível salvar o perfil. Verifique o espaço do dispositivo e tente novamente.",
+      );
+    }
+  },
+});
+
 export interface PreferencesContextValue {
   userName: string;
   appTheme: AppTheme;
-  setUserName: (userName: string) => Promise<void>;
-  setAppTheme: (appTheme: AppTheme) => Promise<void>;
+  setUserName: (name: string) => Promise<void>;
+  setAppTheme: (theme: AppTheme) => Promise<void>;
   isHydrated: boolean;
-  /** The most recent hydration error, if one occurred. */
   loadError: string | null;
-  /** The most recent persistence error, if one occurred. */
   saveError: string | null;
-  /** Combined error for consumers that do not need to distinguish its source. */
   error: string | null;
+  trainerProfile: TrainerProfile;
+  trainerReady: boolean;
+  trainerBusy: boolean;
+  saveTrainerProfile: (profile: TrainerProfile) => Promise<boolean>;
+  reloadTrainer: () => Promise<void>;
 }
-
-export const PreferencesContext = createContext<PreferencesContextValue | undefined>(
-  undefined,
-);
-
-function errorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim()) return error.message;
-  if (typeof error === "string" && error.trim()) return error;
-  return fallback;
-}
-
-function readStoredUserName(value: string | null): string {
-  const trimmed = value?.trim() ?? "";
-  return trimmed || DEFAULT_USER_NAME;
-}
-
-function readStoredAppTheme(value: string | null): AppTheme {
-  return value === "mewtwo" ? "mewtwo" : DEFAULT_APP_THEME;
-}
+export const PreferencesContext = createContext<
+  PreferencesContextValue | undefined
+>(undefined);
 
 export function PreferencesProvider({ children }: PropsWithChildren) {
-  const [userName, setUserNameState] = useState(DEFAULT_USER_NAME);
-  const [appTheme, setAppThemeState] = useState<AppTheme>(DEFAULT_APP_THEME);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const trainer = useSyncExternalStore(
+    trainerStore.subscribe,
+    trainerStore.getSnapshot,
+    trainerStore.getSnapshot,
+  );
+  const [appTheme, setTheme] = useState<AppTheme>(DEFAULT_APP_THEME);
+  const [isHydrated, setHydrated] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-
+  const savingTheme = useRef(false);
   useEffect(() => {
-    let isMounted = true;
-
-    const hydrate = async () => {
-      const results = await Promise.allSettled([
-        AsyncStorage.getItem(PREFERENCES_STORAGE_KEYS.userName),
-        AsyncStorage.getItem(PREFERENCES_STORAGE_KEYS.appTheme),
-      ]);
-
-      if (!isMounted) return;
-
-      const [storedName, storedTheme] = results;
-      if (storedName.status === "fulfilled") {
-        setUserNameState(readStoredUserName(storedName.value));
-      }
-      if (storedTheme.status === "fulfilled") {
-        setAppThemeState(readStoredAppTheme(storedTheme.value));
-      }
-
-      const failedRead = results.find((result) => result.status === "rejected");
-      setLoadError(
-        failedRead?.status === "rejected"
-          ? errorMessage(failedRead.reason, "Não foi possível carregar suas preferências.")
-          : null,
-      );
-      setIsHydrated(true);
-    };
-
-    void hydrate();
-
+    let mounted = true;
+    void Promise.allSettled([
+      AsyncStorage.getItem(PREFERENCES_STORAGE_KEYS.appTheme),
+      trainerStore.hydrate(),
+    ]).then(([theme]) => {
+      if (!mounted) return;
+      if (theme.status === "fulfilled")
+        setTheme(theme.value === "mewtwo" ? "mewtwo" : "gengar");
+      else setLoadError("Não foi possível carregar o tema salvo.");
+      setHydrated(true);
+    });
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 
-  const setUserName = useCallback(async (nextUserName: string) => {
-    const normalizedUserName = nextUserName.trim() || DEFAULT_USER_NAME;
-
-    // Update first so a failed write never rolls back the user's draft.
-    setUserNameState(normalizedUserName);
+  const setAppTheme = useCallback(async (next: AppTheme) => {
+    if (savingTheme.current) return;
+    savingTheme.current = true;
     setSaveError(null);
-
     try {
-      await AsyncStorage.setItem(PREFERENCES_STORAGE_KEYS.userName, normalizedUserName);
-    } catch (error) {
-      setSaveError(errorMessage(error, "Não foi possível salvar o nome."));
-      throw error;
+      await AsyncStorage.setItem(PREFERENCES_STORAGE_KEYS.appTheme, next);
+      setTheme(next);
+      setLoadError(null);
+    } catch {
+      const message = "Não foi possível salvar o tema. Tente novamente.";
+      setSaveError(message);
+      throw new Error(message);
+    } finally {
+      savingTheme.current = false;
     }
   }, []);
 
-  const setAppTheme = useCallback(async (nextAppTheme: AppTheme) => {
-    // Update first so a failed write never rolls back the user's draft.
-    setAppThemeState(nextAppTheme);
-    setSaveError(null);
-
-    try {
-      await AsyncStorage.setItem(PREFERENCES_STORAGE_KEYS.appTheme, nextAppTheme);
-    } catch (error) {
-      setSaveError(errorMessage(error, "Não foi possível salvar o tema."));
-      throw error;
-    }
+  const setUserName = useCallback(async (name: string) => {
+    const result = await trainerStore.save({
+      ...trainerStore.getSnapshot().profile,
+      name: name.trim() || DEFAULT_USER_NAME,
+    });
+    if (!result)
+      throw new Error(
+        trainerStore.getSnapshot().error ?? "Não foi possível salvar o nome.",
+      );
   }, []);
 
   const value = useMemo<PreferencesContextValue>(
     () => ({
-      userName,
+      userName: trainer.profile.name,
       appTheme,
       setUserName,
       setAppTheme,
       isHydrated,
-      loadError,
-      saveError,
-      error: saveError ?? loadError,
+      loadError: loadError ?? (!trainer.ready ? trainer.error : null),
+      saveError: saveError ?? (trainer.ready ? trainer.error : null),
+      error: trainer.error ?? saveError ?? loadError,
+      trainerProfile: trainer.profile,
+      trainerReady: trainer.ready,
+      trainerBusy: trainer.busy,
+      saveTrainerProfile: trainerStore.save,
+      reloadTrainer: trainerStore.hydrate,
     }),
     [
+      trainer,
       appTheme,
+      setUserName,
+      setAppTheme,
       isHydrated,
       loadError,
       saveError,
-      setAppTheme,
-      setUserName,
-      userName,
     ],
   );
-
-  return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
+  return (
+    <PreferencesContext.Provider value={value}>
+      {children}
+    </PreferencesContext.Provider>
+  );
 }
-
 export function usePreferences(): PreferencesContextValue {
   const context = useContext(PreferencesContext);
-  if (!context) {
+  if (!context)
     throw new Error("usePreferences must be used within a PreferencesProvider");
-  }
   return context;
 }

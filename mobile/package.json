@@ -37,7 +37,9 @@
     "start:dev-client": "expo start --dev-client",
     "android": "expo start --go --android",
     "ios": "expo start --go --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "lint": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test ../tests/*.test.mjs"
   },
   "private": true
 }

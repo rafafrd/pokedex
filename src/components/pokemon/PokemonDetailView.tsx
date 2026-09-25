@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Heart } from "lucide-react";
 import type { PokemonDetail } from "../../types/pokemon";
 import { getTypeColor } from "../../utils/typeColors";
 import { PokemonSprite } from "./PokemonSprite";
@@ -6,6 +6,7 @@ import { PokemonSprite } from "./PokemonSprite";
 interface PokemonDetailViewProps {
   pokemon: PokemonDetail;
   onBack: () => void;
+  onChooseCompanion?: () => void;
 }
 
 const STAT_LABELS: Record<string, string> = {
@@ -20,7 +21,11 @@ const STAT_LABELS: Record<string, string> = {
 const MAX_STAT_SCALE = 180;
 
 /** Mode B: direct id/name lookup with full telemetry for one Pokémon. */
-export function PokemonDetailView({ pokemon, onBack }: PokemonDetailViewProps) {
+export function PokemonDetailView({
+  pokemon,
+  onBack,
+  onChooseCompanion,
+}: PokemonDetailViewProps) {
   return (
     <div className="w-full rounded-2xl border border-border/40 bg-surface/30 p-6 backdrop-blur-sm sm:p-8">
       <button
@@ -49,6 +54,15 @@ export function PokemonDetailView({ pokemon, onBack }: PokemonDetailViewProps) {
             <h2 className="text-2xl font-extrabold capitalize text-text-primary">
               {pokemon.name}
             </h2>
+            {onChooseCompanion && (
+              <button
+                type="button"
+                onClick={onChooseCompanion}
+                className="mt-3 flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white hover:bg-accent-hover"
+              >
+                <Heart size={16} /> Escolher como companheiro
+              </button>
+            )}
             <div className="mt-2 flex flex-wrap gap-2">
               {pokemon.types.map((type) => (
                 <span

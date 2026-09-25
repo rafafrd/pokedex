@@ -1,6 +1,9 @@
 const { getDefaultConfig } = require("expo/metro-config");
+const path = require("node:path");
 
 const config = getDefaultConfig(__dirname);
+// Share only the platform-independent companion rules, never the web React runtime.
+config.watchFolders = [...config.watchFolders, path.resolve(__dirname, "../shared")];
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform !== "web" && moduleName.startsWith("three") && moduleName !== "three/webgpu") {

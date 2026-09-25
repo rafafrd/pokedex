@@ -5,6 +5,12 @@ Academic-grade rewrite of the original vanilla `index.html` / `css/style.css` /
 WebGL background and two switchable custom themes (no UI component library
 is used anywhere in the project).
 
+## Companion / Companheiro
+
+The web and Expo apps include a Pokémon companion module with nicknames, berries,
+care actions, friendship levels, a shared pantry, and local persistence.
+See [the companion guide](docs/companion.md) for gameplay, architecture, and validation.
+
 ## Stack
 
 - **Vite** + **React 18** + **TypeScript** (strict mode)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 import {
   AccessibilityInfo,
   Pressable,
@@ -127,6 +128,7 @@ export function PokemonDetailScreen({
   onBack,
 }: PokemonDetailScreenProps) {
   const reducedMotion = useReducedMotionPreference();
+  const router = useRouter();
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -187,6 +189,34 @@ export function PokemonDetailScreen({
             </View>
           </View>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Escolher como companheiro"
+          onPress={() =>
+            router.push({
+              pathname: "/companion",
+              params: {
+                pokemonId: String(pokemon.id),
+                pokemonName: pokemon.name,
+              },
+            })
+          }
+          style={({ pressed }) => ({
+            backgroundColor: theme.primary,
+            borderRadius: 16,
+            minHeight: 48,
+            padding: 14,
+            alignItems: "center",
+            opacity: pressed ? 0.75 : 1,
+          })}
+        >
+          <Text
+            style={{ color: theme.onPrimary, fontWeight: "800", fontSize: 14 }}
+          >
+            ♡ Escolher como companheiro
+          </Text>
+        </Pressable>
 
         <View style={styles.section}>
           <Text selectable style={[styles.sectionTitle, { color: theme.foreground }]}>Informações</Text>

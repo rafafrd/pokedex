@@ -42,13 +42,23 @@ function AppNavigator() {
         <Stack.Screen name="index" />
         <Stack.Screen name="pokemon/[id]" />
         <Stack.Screen
+          name="companion"
+          options={{
+            headerShown: true,
+            title: "Companheiro",
+            headerStyle: { backgroundColor: palette.surface },
+            headerTintColor: palette.text,
+            contentStyle: { backgroundColor: palette.background },
+          }}
+        />
+        <Stack.Screen
           name="settings"
           options={{
             headerShown: true,
             headerStyle: { backgroundColor: palette.surface },
             headerTintColor: palette.text,
             headerTitleStyle: { color: palette.text },
-            title: "Configurações",
+            title: "Perfil do treinador",
           }}
         />
       </Stack>
