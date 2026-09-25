@@ -3,7 +3,9 @@ import type { ImageStyle, StyleProp, ViewStyle } from "react-native";
 import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 
+import { getBestPokemonSpriteUrl } from "@/api";
 import { colors, radius, typography } from "@/theme";
+import type { PokemonSpriteSet } from "@/types/pokemon";
 
 export interface PokemonArtworkProps {
   /** Artwork URL. A missing or failed URL renders an accessible placeholder. */
@@ -13,12 +15,7 @@ export interface PokemonArtworkProps {
   size?: number;
   style?: StyleProp<ImageStyle>;
   /** Optional sprite set fallback for detail views that already have sprites. */
-  sprites?: {
-    artwork?: string | null;
-    front?: string | null;
-    showdown?: string | null;
-    animated?: string | null;
-  };
+  sprites?: Partial<PokemonSpriteSet>;
 }
 
 function formatName(name: string): string {
@@ -43,7 +40,7 @@ function initialsFor(name: string): string {
     .toUpperCase();
 }
 
-/** Displays official artwork while keeping broken/empty remote URLs graceful. */
+/** Displays the preferred API sprite while keeping broken/empty remote URLs graceful. */
 export function PokemonArtwork({
   uri,
   name,
@@ -54,7 +51,15 @@ export function PokemonArtwork({
   const [hasError, setHasError] = useState(false);
   const displayName = formatName(name);
   const resolvedUri =
-    uri ?? sprites?.artwork ?? sprites?.front ?? sprites?.showdown ?? sprites?.animated;
+    uri ??
+    (sprites
+      ? getBestPokemonSpriteUrl({
+          animated: sprites.animated ?? null,
+          showdown: sprites.showdown ?? null,
+          artwork: sprites.artwork ?? null,
+          front: sprites.front ?? null,
+        })
+      : null);
   const artworkSize = Math.max(1, size);
 
   useEffect(() => {

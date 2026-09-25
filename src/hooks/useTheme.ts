@@ -39,8 +39,12 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 function getInitialTheme(): ThemeName {
   if (typeof window === "undefined") return "gengar";
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "gengar" || stored === "mewtwo") return stored;
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === "gengar" || stored === "mewtwo") return stored;
+  } catch {
+    /* Theme still works when browser storage is unavailable. */
+  }
 
   const prefersLight = window.matchMedia?.(
     "(prefers-color-scheme: light)",
@@ -55,10 +59,18 @@ function getInitialTheme(): ThemeName {
  */
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeName>(getInitialTheme);
+  const [themeError, setThemeError] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem(STORAGE_KEY, theme);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, theme);
+      setThemeError(null);
+    } catch {
+      setThemeError(
+        "O tema foi aplicado, mas não pôde ser salvo neste navegador.",
+      );
+    }
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
@@ -69,5 +81,5 @@ export function useTheme() {
   // palette object identity without re-running effects every render.
   const palette = useMemo(() => THEMES[theme], [theme]);
 
-  return { theme, setTheme, toggleTheme, palette };
+  return { theme, setTheme, toggleTheme, palette, themeError };
 }

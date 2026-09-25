@@ -16,19 +16,20 @@ import {
 
 import { getPokemon, listPokemon } from "@/api";
 import { PokemonCard } from "@/components";
-import { colors, radius, shadows, spacing, typography } from "@/theme";
+import { usePreferences } from "@/features/preferences";
+import {
+  getAppTheme,
+  normalizePokemonTypeTheme,
+  radius,
+  shadows,
+  spacing,
+  typography,
+} from "@/theme";
+import type { AppThemePalette } from "@/theme";
 import type { PokemonSummary } from "@/types/pokemon";
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
-
-function titleCase(value: string) {
-  return value
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -36,14 +37,23 @@ function errorMessage(error: unknown) {
     : "Não foi possível carregar a Pokédex. Tente novamente.";
 }
 
-function LoadingState() {
+function primaryPokemonType(types: readonly string[]): string | null {
+  const type = types.find((value) => /^[a-z-]+$/i.test(value.trim()))?.trim().toLowerCase();
+  return type && normalizePokemonTypeTheme(type) !== "unknown" ? type : null;
+}
+
+function LoadingState({ theme }: { theme: AppThemePalette }) {
   return (
-    <View accessibilityRole="progressbar" style={styles.state}>
-      <ActivityIndicator color={colors.commandRed} size="large" />
-      <Text selectable style={styles.stateTitle}>
+    <View
+      accessibilityLabel="Carregando Pokémon"
+      accessibilityRole="progressbar"
+      style={[styles.state, { backgroundColor: theme.surface, borderColor: theme.border }]}
+    >
+      <ActivityIndicator color={theme.accent} size="large" />
+      <Text selectable style={[styles.stateTitle, { color: theme.text }]}>
         Carregando Pokémon
       </Text>
-      <Text selectable style={styles.stateText}>
+      <Text selectable style={[styles.stateText, { color: theme.mutedText }]}>
         Buscando dados na PokéAPI.
       </Text>
     </View>
@@ -51,31 +61,40 @@ function LoadingState() {
 }
 
 function MessageState({
+  theme,
   title,
   message,
   actionLabel,
   onAction,
 }: {
+  theme: AppThemePalette;
   title: string;
   message: string;
   actionLabel?: string;
   onAction?: () => void;
 }) {
   return (
-    <View accessible style={styles.state}>
-      <Text selectable style={styles.stateTitle}>
+    <View
+      accessible
+      style={[styles.state, { backgroundColor: theme.surface, borderColor: theme.border }]}
+    >
+      <Text selectable style={[styles.stateTitle, { color: theme.text }]}>
         {title}
       </Text>
-      <Text selectable style={styles.stateText}>
+      <Text selectable style={[styles.stateText, { color: theme.mutedText }]}>
         {message}
       </Text>
       {actionLabel && onAction ? (
         <Pressable
           accessibilityRole="button"
           onPress={onAction}
-          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            { backgroundColor: theme.accent },
+            pressed && styles.buttonPressed,
+          ]}
         >
-          <Text selectable style={styles.primaryButtonLabel}>
+          <Text selectable style={[styles.primaryButtonLabel, { color: theme.accentContrast }]}>
             {actionLabel}
           </Text>
         </Pressable>
@@ -86,10 +105,13 @@ function MessageState({
 
 export function PokedexScreen() {
   const router = useRouter();
+  const { appTheme, userName } = usePreferences();
+  const theme = getAppTheme(appTheme);
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectionError, setSelectionError] = useState<string | null>(null);
 
   useEffect(() => {
     const timeoutId = setTimeout(
@@ -128,14 +150,28 @@ export function PokedexScreen() {
   const isEmpty = !isInitialLoad && !activeQuery.isError && filteredPokemon.length === 0;
 
   const handleSelect = (pokemon: PokemonSummary) => {
-    router.push({ pathname: "/pokemon/[id]", params: { id: String(pokemon.id) } });
+    // The catalogue already carries the type from PokeAPI. Never open a detail
+    // route until this payload has a valid type; the detail route validates the
+    // freshly fetched type again before it renders the themed screen.
+    const primaryType = primaryPokemonType(pokemon.types);
+    if (!primaryType) {
+      setSelectionError("Não foi possível identificar o tipo deste Pokémon antes de abrir a ficha.");
+      return;
+    }
+
+    setSelectionError(null);
+    router.push({
+      pathname: "/pokemon/[id]",
+      params: { id: String(pokemon.id), type: primaryType },
+    });
   };
 
   const renderEmpty = () => {
-    if (isInitialLoad) return <LoadingState />;
+    if (isInitialLoad) return <LoadingState theme={theme} />;
     if (activeQuery.isError) {
       return (
         <MessageState
+          theme={theme}
           title="A Pokédex não respondeu"
           message={errorMessage(activeQuery.error)}
           actionLabel="Tentar novamente"
@@ -146,6 +182,7 @@ export function PokedexScreen() {
     if (isEmpty) {
       return (
         <MessageState
+          theme={theme}
           title="Nenhum Pokémon encontrado"
           message={
             debouncedSearch
@@ -163,11 +200,12 @@ export function PokedexScreen() {
   return (
     <FlatList
       key={`pokemon-grid-${columnCount}`}
+      style={{ backgroundColor: theme.background }}
       data={filteredPokemon}
       numColumns={columnCount}
       keyExtractor={(pokemon) => String(pokemon.id)}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={[styles.listContent, { backgroundColor: theme.background }]}
       columnWrapperStyle={filteredPokemon.length ? styles.column : undefined}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -175,38 +213,83 @@ export function PokedexScreen() {
         <RefreshControl
           refreshing={activeQuery.isRefetching}
           onRefresh={() => void activeQuery.refetch()}
-          tintColor={colors.commandRed}
-          colors={[colors.commandRed]}
+          tintColor={theme.accent}
+          colors={[theme.accent]}
         />
       }
       ListHeaderComponent={
         <View style={styles.headerWrap}>
           <LinearGradient
-            colors={[colors.deepBlueStrong, colors.deepBlue]}
+            colors={[theme.heroStart, theme.heroEnd]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.hero}
           >
             <View style={styles.heroTopline}>
               <View style={styles.pokeballMark} accessibilityLabel="Pokébola">
-                <View style={styles.pokeballTop} />
-                <View style={styles.pokeballBand} />
-                <View style={styles.pokeballCenter} />
+                <View style={[styles.pokeballTop, { backgroundColor: theme.accent }]} />
+                <View style={[styles.pokeballBand, { backgroundColor: theme.accentContrast }]} />
+                <View
+                  style={[styles.pokeballCenter, { borderColor: theme.accentContrast }]}
+                />
               </View>
               <Text selectable style={styles.eyebrow}>
                 CATÁLOGO DE CAMPO
               </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Abrir perfil do treinador"
+                hitSlop={8}
+                onPress={() => router.push("/settings")}
+                style={({ pressed }) => [styles.settingsButton, pressed && styles.buttonPressed]}
+              >
+                <Text selectable style={styles.settingsLabel}>
+                  Meu perfil
+                </Text>
+              </Pressable>
             </View>
             <Text selectable style={styles.heroTitle}>
               Pokédex
+            </Text>
+            <Text selectable style={styles.welcomeText}>
+              Bem-vindo, {userName}
             </Text>
             <Text selectable style={styles.heroText}>
               Encontre e consulte seus Pokémon favoritos.
             </Text>
           </LinearGradient>
 
-          <View style={styles.searchCard}>
-            <Text selectable style={styles.searchLabel}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Abrir módulo de companheiro"
+            onPress={() => router.push("/companion")}
+            style={({ pressed }) => [
+              styles.companionLink,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={{ fontSize: 26 }}>💗</Text>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text
+                style={{ color: theme.text, fontWeight: "800", fontSize: 16 }}
+              >
+                Meu companheiro
+              </Text>
+              <Text style={{ color: theme.mutedText, fontSize: 12 }}>
+                Frutas, carinho e uma amizade para cuidar.
+              </Text>
+            </View>
+            <Text style={{ color: theme.accent, fontSize: 22 }}>→</Text>
+          </Pressable>
+
+          <View
+            style={[
+              styles.searchCard,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+            ]}
+          >
+            <Text selectable style={[styles.searchLabel, { color: theme.mutedText }]}>
               Pesquisar na Pokédex
             </Text>
             <View style={styles.searchRow}>
@@ -214,12 +297,19 @@ export function PokedexScreen() {
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Nome ou número"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={theme.mutedText}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="search"
                 accessibilityLabel="Pesquisar Pokémon por nome ou número"
-                style={styles.searchInput}
+                style={[
+                  styles.searchInput,
+                  {
+                    backgroundColor: theme.surfaceMuted,
+                    borderColor: theme.border,
+                    color: theme.text,
+                  },
+                ]}
               />
               {search ? (
                 <Pressable
@@ -229,7 +319,7 @@ export function PokedexScreen() {
                   onPress={() => setSearch("")}
                   style={({ pressed }) => [styles.clearButton, pressed && styles.buttonPressed]}
                 >
-                  <Text selectable style={styles.clearButtonLabel}>
+                  <Text selectable style={[styles.clearButtonLabel, { color: theme.accent }]}>
                     Limpar
                   </Text>
                 </Pressable>
@@ -237,12 +327,24 @@ export function PokedexScreen() {
             </View>
           </View>
 
+          {selectionError ? (
+            <View
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+              style={[styles.validationMessage, { borderColor: theme.accent }]}
+            >
+              <Text selectable style={[styles.validationText, { color: theme.text }]}>
+                {selectionError}
+              </Text>
+            </View>
+          ) : null}
+
           {!activeQuery.isPending && !activeQuery.isError ? (
             <View style={styles.resultMeta}>
-              <Text selectable style={styles.resultMetaText}>
+              <Text selectable style={[styles.resultMetaText, { color: theme.mutedText }]}>
                 Página {page} de {totalPages}
               </Text>
-              <Text selectable style={styles.resultMetaText}>
+              <Text selectable style={[styles.resultMetaText, { color: theme.mutedText }]}>
                 {debouncedSearch
                   ? `${filteredPokemon.length} resultado${filteredPokemon.length === 1 ? "" : "s"}`
                   : `${pageQuery.data?.count ?? 0} registros`}
@@ -257,6 +359,7 @@ export function PokedexScreen() {
           index={(page - 1) * PAGE_SIZE + index}
           onPress={handleSelect}
           style={styles.card}
+          theme={theme}
         />
       )}
       ListEmptyComponent={renderEmpty}
@@ -271,15 +374,16 @@ export function PokedexScreen() {
               onPress={() => setPage((current) => Math.max(1, current - 1))}
               style={({ pressed }) => [
                 styles.paginationButton,
+                { backgroundColor: theme.surface, borderColor: theme.border },
                 page === 1 && styles.buttonDisabled,
                 pressed && page > 1 && styles.buttonPressed,
               ]}
             >
-              <Text selectable style={styles.paginationLabel}>
+              <Text selectable style={[styles.paginationLabel, { color: theme.text }]}>
                 Anterior
               </Text>
             </Pressable>
-            <Text selectable style={styles.pageNumber}>
+            <Text selectable style={[styles.pageNumber, { color: theme.accent }]}>
               {String(page).padStart(2, "0")}
             </Text>
             <Pressable
@@ -290,11 +394,12 @@ export function PokedexScreen() {
               onPress={() => setPage((current) => Math.min(totalPages, current + 1))}
               style={({ pressed }) => [
                 styles.paginationButton,
+                { backgroundColor: theme.surface, borderColor: theme.border },
                 page === totalPages && styles.buttonDisabled,
                 pressed && page < totalPages && styles.buttonPressed,
               ]}
             >
-              <Text selectable style={styles.paginationLabel}>
+              <Text selectable style={[styles.paginationLabel, { color: theme.text }]}>
                 Próxima
               </Text>
             </Pressable>
@@ -306,16 +411,22 @@ export function PokedexScreen() {
 }
 
 const styles = StyleSheet.create({
+  companionLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 18,
+    borderWidth: 1,
+    borderRadius: 18,
+    marginBottom: spacing.lg,
+  },
   listContent: {
-    backgroundColor: colors.background,
     flexGrow: 1,
     gap: spacing.md,
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
-  headerWrap: {
-    gap: spacing.md,
-  },
+  headerWrap: { gap: spacing.md },
   hero: {
     borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: radius.lg,
@@ -326,61 +437,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
   },
-  heroTopline: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
+  heroTopline: { alignItems: "center", flexDirection: "row", gap: spacing.sm },
   pokeballMark: {
     alignItems: "center",
-    backgroundColor: colors.white,
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     height: 32,
     justifyContent: "center",
     overflow: "hidden",
     width: 32,
   },
-  pokeballTop: {
-    alignSelf: "stretch",
-    backgroundColor: colors.commandRed,
-    height: 14,
-    position: "absolute",
-    top: 0,
-  },
-  pokeballBand: {
-    alignSelf: "stretch",
-    backgroundColor: colors.deepBlueStrong,
-    height: 4,
-  },
+  pokeballTop: { alignSelf: "stretch", height: 14, position: "absolute", top: 0 },
+  pokeballBand: { alignSelf: "stretch", height: 4 },
   pokeballCenter: {
-    backgroundColor: colors.white,
-    borderColor: colors.deepBlueStrong,
+    backgroundColor: "#FFFFFF",
     borderRadius: 7,
     borderWidth: 3,
     height: 14,
     width: 14,
   },
-  eyebrow: {
-    color: "#C5D9F1",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.2,
+  eyebrow: { color: "#F5EFFF", flex: 1, fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
+  settingsButton: {
+    borderColor: "#FFFFFFB3",
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: "center",
+    minHeight: 34,
+    paddingHorizontal: spacing.sm,
   },
+  settingsLabel: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   heroTitle: {
-    color: colors.white,
+    color: "#FFFFFF",
     fontSize: 36,
     fontWeight: "900",
     letterSpacing: -1,
     marginTop: spacing.md,
   },
-  heroText: {
-    color: "#D9E9F9",
-    fontSize: 15,
-    lineHeight: 22,
-  },
+  welcomeText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  heroText: { color: "#F3EEFF", fontSize: 15, lineHeight: 22 },
   searchCard: {
-    backgroundColor: colors.card,
-    borderColor: colors.cardBorder,
     borderCurve: "continuous",
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -389,60 +484,28 @@ const styles = StyleSheet.create({
     marginTop: -spacing.lg,
     padding: spacing.md,
   },
-  searchLabel: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: "800",
-  },
-  searchRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
+  searchLabel: { ...typography.caption, fontWeight: "800" },
+  searchRow: { alignItems: "center", flexDirection: "row", gap: spacing.sm },
   searchInput: {
-    backgroundColor: colors.cardSurface,
-    borderColor: colors.cardBorder,
     borderCurve: "continuous",
     borderRadius: radius.md,
     borderWidth: 1,
-    color: colors.textPrimary,
     flex: 1,
     fontSize: 16,
     minHeight: 46,
     paddingHorizontal: spacing.md,
   },
-  clearButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 42,
-    paddingHorizontal: spacing.sm,
-  },
-  clearButtonLabel: {
-    color: colors.commandRed,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  resultMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  resultMetaText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  column: {
-    gap: spacing.md,
-  },
-  card: {
-    flex: 1,
-    marginBottom: spacing.md,
-  },
+  clearButton: { alignItems: "center", justifyContent: "center", minHeight: 42, paddingHorizontal: spacing.sm },
+  clearButtonLabel: { fontSize: 13, fontWeight: "800" },
+  validationMessage: { borderLeftWidth: 3, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  validationText: { fontSize: 13, lineHeight: 19 },
+  resultMeta: { flexDirection: "row", justifyContent: "space-between" },
+  resultMetaText: { fontSize: 12, fontWeight: "700" },
+  column: { gap: spacing.md },
+  card: { flex: 1, marginBottom: spacing.md },
   state: {
     alignItems: "center",
     alignSelf: "stretch",
-    backgroundColor: colors.card,
-    borderColor: colors.cardBorder,
     borderCurve: "continuous",
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -452,67 +515,28 @@ const styles = StyleSheet.create({
     minHeight: 230,
     padding: spacing.lg,
   },
-  stateTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  stateText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-  },
+  stateTitle: { fontSize: 18, fontWeight: "800", textAlign: "center" },
+  stateText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: colors.commandRed,
     borderRadius: radius.pill,
     justifyContent: "center",
     marginTop: spacing.sm,
     minHeight: 44,
     paddingHorizontal: spacing.lg,
   },
-  primaryButtonLabel: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  pagination: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.md,
-    justifyContent: "center",
-    paddingTop: spacing.sm,
-  },
+  primaryButtonLabel: { fontSize: 14, fontWeight: "800" },
+  pagination: { alignItems: "center", flexDirection: "row", gap: spacing.md, justifyContent: "center", paddingTop: spacing.sm },
   paginationButton: {
     alignItems: "center",
-    backgroundColor: colors.card,
-    borderColor: colors.cardBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: "center",
     minHeight: 42,
     paddingHorizontal: spacing.md,
   },
-  paginationLabel: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  pageNumber: {
-    color: colors.commandRed,
-    fontSize: 16,
-    fontVariant: ["tabular-nums"],
-    fontWeight: "900",
-    minWidth: 30,
-    textAlign: "center",
-  },
-  buttonPressed: {
-    opacity: 0.72,
-    transform: [{ scale: 0.98 }],
-  },
-  buttonDisabled: {
-    opacity: 0.45,
-  },
+  paginationLabel: { fontSize: 13, fontWeight: "800" },
+  pageNumber: { fontSize: 16, fontVariant: ["tabular-nums"], fontWeight: "900", minWidth: 30, textAlign: "center" },
+  buttonPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
+  buttonDisabled: { opacity: 0.45 },
 });

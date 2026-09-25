@@ -30,25 +30,64 @@ export interface PokeApiAbilitySlot {
   slot?: number;
 }
 
-export interface PokeApiSpriteVariant {
-  front_default: string | null;
+/**
+ * URL fields shared by the sprite objects returned by PokeAPI.
+ *
+ * PokeAPI uses the same shape for the top-level sprites, the `other`
+ * variants, and most generation-specific variants.  Keeping the fields
+ * optional here reflects the API accurately: older generations and some
+ * forms simply omit fields that do not exist for them.
+ */
+export interface PokeApiSpriteFrameFields {
+  back_default?: string | null;
+  back_female?: string | null;
+  back_shiny?: string | null;
+  back_shiny_female?: string | null;
+  back_transparent?: string | null;
+  front_default?: string | null;
+  front_female?: string | null;
   front_shiny?: string | null;
+  front_shiny_female?: string | null;
+  front_transparent?: string | null;
 }
 
-export interface PokeApiSprites {
+/** A concrete sprite variant, such as `other.showdown`. */
+export interface PokeApiSpriteVariant extends PokeApiSpriteFrameFields {
   front_default: string | null;
-  front_shiny?: string | null;
-  other?: {
-    showdown?: PokeApiSpriteVariant;
-    "official-artwork"?: PokeApiSpriteVariant;
+}
+
+/**
+ * Showdown normally exposes its animated GIF as `front_default`.  A few
+ * cached/alternate payloads expose an explicit `animated` child instead, so
+ * the contract accepts both forms.
+ */
+export interface PokeApiShowdownSpriteVariant extends PokeApiSpriteVariant {
+  animated?: PokeApiSpriteVariant;
+}
+
+/** Generation V's Black/White group contains the animated child plus static fields. */
+export interface PokeApiBlackWhiteSprites extends PokeApiSpriteFrameFields {
+  animated?: PokeApiSpriteVariant;
+}
+
+export interface PokeApiSpriteOther {
+  dream_world?: PokeApiSpriteVariant;
+  home?: PokeApiSpriteVariant;
+  showdown?: PokeApiShowdownSpriteVariant;
+  "official-artwork"?: PokeApiSpriteVariant;
+}
+
+export interface PokeApiSpriteVersions {
+  "generation-v"?: {
+    "black-white"?: PokeApiBlackWhiteSprites;
   };
-  versions?: {
-    "generation-v"?: {
-      "black-white"?: {
-        animated?: PokeApiSpriteVariant;
-      };
-    };
-  };
+}
+
+export interface PokeApiSprites extends PokeApiSpriteFrameFields {
+  /** The parser normalizes a missing top-level field to `null`. */
+  front_default: string | null;
+  other?: PokeApiSpriteOther;
+  versions?: PokeApiSpriteVersions;
 }
 
 /** The subset of a detailed Pokémon response consumed by the mobile app. */

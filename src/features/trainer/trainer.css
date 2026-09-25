@@ -1,0 +1,222 @@
+.trainer-module .companion-heading {
+  margin-bottom: 25px;
+}
+.trainer-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.4fr);
+  gap: 22px;
+  align-items: start;
+}
+.trainer-pass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 25px;
+  position: relative;
+  text-align: center;
+}
+.trainer-avatar-large {
+  font-size: 65px;
+  display: grid;
+  place-items: center;
+  width: 130px;
+  height: 130px;
+  background: rgb(var(--color-surface) / 0.2);
+  border: 1px dashed rgb(var(--color-border) / 0.6);
+  border-radius: 50%;
+  margin: 32px 0 22px;
+}
+.trainer-pass h3 {
+  font:
+    800 29px "Trebuchet MS",
+    sans-serif;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.trainer-region {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgb(var(--color-text-secondary));
+}
+.trainer-pass > p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 22px 0;
+  overflow-wrap: anywhere;
+}
+.trainer-pass-footer {
+  margin-top: 20px;
+  padding-top: 22px;
+  border-top: 1px dashed rgb(var(--color-border) / 0.5);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  color: rgb(var(--color-text-secondary));
+  font-size: 9px;
+  letter-spacing: 1.2px;
+}
+.trainer-pass-footer span {
+  color: var(--pet-pink);
+}
+.trainer-form {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.trainer-form h3 {
+  font-size: 20px;
+  font-weight: 800;
+}
+.trainer-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.trainer-form legend {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.trainer-form select {
+  color: rgb(var(--color-text-primary));
+  padding: 13px;
+  min-height: 48px;
+  border: 1px solid rgb(var(--color-border) / 0.6);
+  border-radius: 12px;
+  background: rgb(var(--color-bg-1));
+}
+.trainer-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.trainer-avatars button {
+  min-width: 48px;
+  height: 48px;
+  border: 1px solid rgb(var(--color-border) / 0.5);
+  border-radius: 13px;
+  font-size: 25px;
+  background: rgb(var(--color-bg-1) / 0.4);
+}
+.trainer-avatars button[aria-pressed="true"] {
+  border-color: var(--pet-pink);
+  background: rgb(var(--color-surface) / 0.25);
+}
+.trainer-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+}
+.trainer-success {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.trainer-theme {
+  border-top: 1px solid rgb(var(--color-border) / 0.3);
+  padding-top: 15px;
+}
+.trainer-theme-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.trainer-theme-options button[aria-pressed="true"] {
+  border-color: var(--pet-pink);
+}
+.trainer-progress {
+  padding: 25px;
+  margin-top: 22px;
+}
+.trainer-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 25px 0;
+}
+.trainer-stats div {
+  text-align: center;
+  padding: 15px 6px;
+  background: rgb(var(--color-surface) / 0.15);
+  border-radius: 14px;
+}
+.trainer-stats strong {
+  display: block;
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+.trainer-stats span {
+  font-size: 11px;
+  color: rgb(var(--color-text-secondary));
+}
+.trainer-badges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.trainer-badge {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  gap: 8px;
+  padding: 18px 12px;
+  border: 1px dashed rgb(var(--color-border) / 0.5);
+  border-radius: 16px;
+}
+.trainer-badge.unlocked {
+  border-style: solid;
+  border-color: var(--pet-green);
+}
+.trainer-badge > span:first-child {
+  font-size: 30px;
+}
+.trainer-badge:not(.unlocked) > span:first-child {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.trainer-badge strong {
+  font-size: 12px;
+}
+.trainer-badge small {
+  color: rgb(var(--color-text-secondary));
+  font-size: 10px;
+  line-height: 1.6;
+}
+.trainer-badge-status {
+  font-size: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+@media (max-width: 760px) {
+  .trainer-grid {
+    grid-template-columns: 1fr;
+  }
+  .trainer-pass {
+    padding: 24px;
+  }
+  .trainer-avatar-large {
+    width: 90px;
+    height: 90px;
+    font-size: 48px;
+    margin: 20px 0 15px;
+  }
+  .trainer-pass-footer {
+    margin-top: 0;
+  }
+  .trainer-form {
+    padding: 22px;
+  }
+  .trainer-badges {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
