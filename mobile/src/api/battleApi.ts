@@ -440,10 +440,13 @@ function getVersionGroupOrder(learnset: readonly LearnsetMove[]): string[] {
   const available = new Set(
     learnset.flatMap((move) => move.details.map((detail) => detail.versionGroup)),
   );
-  const preferred = BATTLE_CONFIG.preferredMoveVersionGroup;
+  // API version-group names are open-ended strings; widen the fixed fallback
+  // tuple at this boundary so future configured/API names remain type-safe.
+  const preferred: string = BATTLE_CONFIG.preferredMoveVersionGroup;
+  const fallbackOrder: readonly string[] = MOVE_VERSION_GROUP_FALLBACK_ORDER;
   const prioritized = [
     preferred,
-    ...MOVE_VERSION_GROUP_FALLBACK_ORDER.filter((group) => group !== preferred),
+    ...fallbackOrder.filter((group) => group !== preferred),
   ].filter((group, index, groups) => available.has(group) && groups.indexOf(group) === index);
   const prioritizedSet = new Set(prioritized);
   const remaining = [...available]
