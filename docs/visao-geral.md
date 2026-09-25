@@ -54,4 +54,4 @@ flowchart LR
 
 Os testes das regras são executados com `npm test` na raiz. O web é verificado com `npm run build`; o TypeScript do mobile, com `npm run lint` dentro de `mobile`. A exportação Expo foi concluída para Android, iOS e web. Ainda falta uma verificação interativa no Expo nativo com um cliente compatível com o SDK 57; gerar os bundles não comprova o funcionamento visual no dispositivo.
 
-Os dados de companheiro e treinador são locais a cada navegador ou dispositivo. Não há conta nem sincronização entre web e mobile. Para regras detalhadas do companheiro, consulte [Módulo de companheiro](companion.md); para instruções do aplicativo, consulte [Mobile](mobile.md).
+Os dados de companheiro e treinador são locais a cada navegador ou dispositivo. Não há conta nem sincronização entre web e mobile. Para o fluxo de chamadas à PokéAPI, consulte [PokéAPI](pokeapi.md); para regras detalhadas do companheiro, consulte [Módulo de companheiro](companion.md); para instruções do aplicativo, consulte [Mobile](mobile.md).
