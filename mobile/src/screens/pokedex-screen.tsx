@@ -257,6 +257,21 @@ export function PokedexScreen() {
             <Text selectable style={styles.heroText}>
               Encontre e consulte seus Pokémon favoritos.
             </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Batalhar"
+              accessibilityHint="Abre a batalha Pokémon."
+              onPress={() => router.push("/battle")}
+              style={({ pressed }) => [
+                styles.battleButton,
+                { backgroundColor: theme.accent },
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text selectable style={[styles.battleButtonLabel, { color: theme.accentContrast }]}>
+                Batalhar
+              </Text>
+            </Pressable>
           </LinearGradient>
 
           <Pressable
@@ -475,6 +490,19 @@ const styles = StyleSheet.create({
   },
   welcomeText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
   heroText: { color: "#F3EEFF", fontSize: 15, lineHeight: 22 },
+  battleButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderRadius: radius.pill,
+    justifyContent: "center",
+    marginTop: spacing.md,
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+  },
+  battleButtonLabel: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
   searchCard: {
     borderCurve: "continuous",
     borderRadius: radius.lg,
