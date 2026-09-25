@@ -8,9 +8,9 @@ A implementação mobile preserva o que importa para quem usa o produto — expl
 
 ## Entrega
 
-- Branch: `feat/mobile`
+- Branch: `feat/mobileBattle`
 - Aplicação: [`mobile/`](../mobile/)
-- Plataforma: React Native com Expo SDK 57 (`expo ~57.0.24`)
+- Plataforma: React Native com Expo SDK 57 (`expo ~57.0.25`)
 - Navegação: Expo Router
 - Dados e cache: TanStack Query + `fetch` nativo
 
@@ -25,6 +25,10 @@ A aplicação mobile permanece isolada em `mobile/`; o app Vite existente e as s
 - Cache de cinco minutos e até duas novas tentativas de leitura para consultas da PokéAPI.
 - Fallback acessível caso a arte remota de um Pokémon não carregue.
 - Rótulos acessíveis para imagens, badges, barras de progresso, busca e botões.
+- CTA acessível “Batalhar” na Pokédex, que abre a seleção do confronto em `/battle`.
+- Batalha PvE funcional por turnos: escolha seu Pokémon e o adversário no catálogo, use movimentos obtidos da PokéAPI, acompanhe HP, PP, ordem e resultado, e inicie uma revanche.
+- Struggle entra como golpe de emergência quando todos os movimentos comuns ficam sem PP; tem poder 50, não consome PP e não causa recuo.
+- A batalha não reproduz áudio nem depende de pacotes de áudio.
 
 ## Design
 
@@ -40,8 +44,12 @@ mobile/
 │   ├── api/                 # cliente PokeAPI, parsing e erros tipados
 │   ├── app/                 # rotas Expo Router
 │   │   ├── index.tsx        # catálogo
+│   │   ├── battle/
+│   │   │   ├── index.tsx    # seleção do confronto
+│   │   │   └── fight.tsx    # arena
 │   │   └── pokemon/[id].tsx # ficha individual
-│   ├── components/          # card, arte e badge de tipo
+│   ├── battle/              # regras, motor e estado da batalha
+│   ├── components/          # cards, arte, badges e arena de batalha
 │   ├── screens/             # composição das telas
 │   ├── theme/               # cores, espaçamento, tipografia e sombras
 │   └── types/               # domínio e respostas mínimas da PokeAPI
@@ -50,6 +58,8 @@ mobile/
 ```
 
 `listPokemon` busca a página da API e busca os detalhes de seus itens em paralelo, pois a resposta de listagem não inclui tipos ou sprites. `getPokemon` é usado na pesquisa global e na rota de detalhes. Ambos recebem um `AbortSignal`, permitindo ao TanStack Query cancelar pedidos que ficaram obsoletos.
+
+A rota `/battle` permite escolher os dois combatentes antes de abrir `/battle/fight`. O motor resolve turnos, movimentos, PP, dano, efetividade de tipos e vitória ou derrota; a CPU escolhe movimentos disponíveis para o adversário. Se os movimentos regulares acabam, Struggle fica disponível. A interface da batalha é silenciosa.
 
 ## Executar localmente
 
@@ -65,13 +75,16 @@ Abra o QR code no Expo Go para testar em um aparelho. Também estão disponívei
 npm run android
 npm run ios
 npm run web
+npm test
 ```
+
+O script `npm test` e as dependências `jest`, `jest-expo` e `@types/jest` ficam preparados para a próxima onda. Esta entrega não adiciona arquivos de teste nem configuração Jest, então ainda não há suíte de testes para executar.
 
 Não há código nativo customizado: o fluxo previsto é Expo Go durante o desenvolvimento. Uma futura publicação nas lojas pode adicionar EAS Build sem alterar a arquitetura da aplicação.
 
 ## Validações executadas
 
-Na entrega foram executados, com sucesso:
+Na entrega inicial foram executados, com sucesso:
 
 ```bash
 cd mobile
@@ -80,4 +93,4 @@ npx expo-doctor --verbose
 npx expo export --platform android --output-dir .expo/verify-android
 ```
 
-O Expo Doctor aprovou as 21 verificações e a exportação gerou o bundle Android.
+O Expo Doctor aprovou as 21 verificações e a exportação gerou o bundle Android. Nesta atualização, também foram executados `npx expo install --check` e `npx tsc --noEmit`; não foram executados testes automatizados porque ainda não há suíte de testes.
