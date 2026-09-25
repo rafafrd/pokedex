@@ -21,7 +21,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-image"
+      "expo-image",
+      "expo-sqlite"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

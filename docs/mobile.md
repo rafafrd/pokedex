@@ -29,10 +29,12 @@ A aplicação mobile permanece isolada em `mobile/`; o app Vite existente e as s
 - Batalha PvE funcional por turnos: escolha seu Pokémon e o adversário no catálogo, use movimentos obtidos da PokéAPI, acompanhe HP, PP, ordem e resultado, e inicie uma revanche.
 - Struggle entra como golpe de emergência quando todos os movimentos comuns ficam sem PP; tem poder 50, não consome PP e não causa recuo.
 - A batalha não reproduz áudio nem depende de pacotes de áudio.
+- Perfil do treinador com nome, avatar, região e apresentação; o perfil também escolhe entre os temas Gengar e Mewtwo.
+- Módulo “Meu companheiro” com cuidados, frutas e progresso persistidos localmente no mobile.
 
 ## Design
 
-A interface adota uma leitura de “cartucho Pokédex”: azul profundo (`deepBlue`), vermelho de comando (`commandRed`) e cartões claros. A marca de Pokébola no cabeçalho é o elemento característico; o restante da interface é intencionalmente discreto para priorizar a leitura do catálogo.
+A interface parte de uma leitura de “cartucho Pokédex” e adapta a paleta ao tema salvo no perfil do treinador. Gengar e Mewtwo oferecem variações de cor para o catálogo, as fichas e o módulo de companheiro.
 
 Os tokens visuais ficam em [`mobile/src/theme/`](../mobile/src/theme/), e os componentes reutilizáveis em [`mobile/src/components/`](../mobile/src/components/).
 
@@ -75,10 +77,14 @@ Abra o QR code no Expo Go para testar em um aparelho. Também estão disponívei
 npm run android
 npm run ios
 npm run web
+npm run start:tunnel
+npm run start:dev-client
+npm run lint
 npm test
+npm run test:mobile
 ```
 
-O script `npm test` e as dependências `jest`, `jest-expo` e `@types/jest` ficam preparados para a próxima onda. Esta entrega não adiciona arquivos de teste nem configuração Jest, então ainda não há suíte de testes para executar.
+`npm test` executa os testes compartilhados do companheiro e treinador e requer Node.js 22.13 ou mais recente. `npm run test:mobile` é o comando separado para Jest no app Expo; as dependências estão preparadas para a próxima onda, mas esta entrega não adiciona arquivos de teste nem configuração Jest mobile. `npm run lint` executa a checagem TypeScript.
 
 Não há código nativo customizado: o fluxo previsto é Expo Go durante o desenvolvimento. Uma futura publicação nas lojas pode adicionar EAS Build sem alterar a arquitetura da aplicação.
 
@@ -93,4 +99,4 @@ npx expo-doctor --verbose
 npx expo export --platform android --output-dir .expo/verify-android
 ```
 
-O Expo Doctor aprovou as 21 verificações e a exportação gerou o bundle Android. Nesta atualização, também foram executados `npx expo install --check` e `npx tsc --noEmit`; não foram executados testes automatizados porque ainda não há suíte de testes.
+O Expo Doctor aprovou as 21 verificações e a exportação gerou o bundle Android. Na integração Battle anterior ao merge com `main`, `npx expo install --check` e `npx tsc --noEmit` também passaram. A validação foi mantida curta durante este merge; consulte `docs/companion.md` para os resultados da suite compartilhada e das exportações dessa entrega.

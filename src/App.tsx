@@ -1,4 +1,11 @@
-import { AlertTriangle, Keyboard, RotateCcw } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Heart,
+  Keyboard,
+  RotateCcw,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import pokedexLogo from "./assets/pokedex.png";
 import { ThreeBackground } from "./components/background/ThreeBackground";
@@ -12,12 +19,35 @@ import { FlowButton } from "./components/spell-ui/FlowButton";
 import { useDebounce } from "./hooks/useDebounce";
 import { usePokeApi } from "./hooks/usePokeApi";
 import { useTheme } from "./hooks/useTheme";
+import { CompanionView } from "./features/companion/CompanionView";
+import type { CompanionPokemon } from "../shared/companion";
+import { useTrainer } from "./features/trainer/useTrainer";
+import { TrainerView } from "./features/trainer/TrainerView";
 
 const ITEMS_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
 function App() {
-  const { theme, toggleTheme, palette } = useTheme();
+  const { theme, setTheme, toggleTheme, palette, themeError } = useTheme();
+  const trainer = useTrainer();
+  const readModule = () =>
+    window.location.hash === "#companion"
+      ? "companion"
+      : window.location.hash === "#trainer"
+        ? "trainer"
+        : "pokedex";
+  const [module, setModule] = useState(readModule);
+  const [companionCandidate, setCompanionCandidate] =
+    useState<CompanionPokemon | null>(null);
+  useEffect(() => {
+    const syncModule = () => setModule(readModule());
+    window.addEventListener("hashchange", syncModule);
+    return () => window.removeEventListener("hashchange", syncModule);
+  }, []);
+  const navigate = (next: "pokedex" | "companion" | "trainer") => {
+    window.location.hash = next;
+    setModule(next);
+  };
 
   // --- useState: primitives driving both browsing and search modes -------
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,33 +127,95 @@ function App() {
                 Pokédex
               </h1>
               <p className="text-xs text-text-secondary">
-                Tema {palette.label} · React + TypeScript + Three.js
+                Olá, {trainer.profile.name} · Tema {palette.label}
               </p>
             </div>
           </div>
 
           <div className="flex w-full items-center gap-3 sm:w-auto">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              inputRef={searchInputRef}
-            />
-            <button
-              type="button"
-              onClick={() => searchInputRef.current?.focus()}
-              aria-label="Atalho de busca rápida"
-              title="Busca rápida (/)"
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-border/50 bg-surface/40 text-text-primary transition-colors hover:bg-accent hover:text-white"
-            >
-              <Keyboard size={18} />
-            </button>
+            {module === "pokedex" && (
+              <>
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  inputRef={searchInputRef}
+                />
+                <button
+                  type="button"
+                  onClick={() => searchInputRef.current?.focus()}
+                  aria-label="Atalho de busca rápida"
+                  title="Busca rápida (/)"
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-border/50 bg-surface/40 text-text-primary transition-colors hover:bg-accent hover:text-white"
+                >
+                  <Keyboard size={18} />
+                </button>
+              </>
+            )}
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
         </header>
 
+        <nav
+          aria-label="Módulos"
+          className="flex flex-wrap gap-2 border-b border-border/30 pb-4"
+        >
+          <button
+            type="button"
+            aria-current={module === "pokedex" ? "page" : undefined}
+            onClick={() => navigate("pokedex")}
+            className={`flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors ${module === "pokedex" ? "bg-accent text-white" : "text-text-secondary hover:bg-surface/30"}`}
+          >
+            <BookOpen size={17} /> Pokédex
+          </button>
+          <button
+            type="button"
+            aria-current={module === "companion" ? "page" : undefined}
+            onClick={() => {
+              setCompanionCandidate(null);
+              navigate("companion");
+            }}
+            className={`flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors ${module === "companion" ? "bg-accent text-white" : "text-text-secondary hover:bg-surface/30"}`}
+          >
+            <Heart size={17} /> Companheiro
+          </button>
+          <button
+            type="button"
+            aria-current={module === "trainer" ? "page" : undefined}
+            onClick={() => navigate("trainer")}
+            className={`flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors ${module === "trainer" ? "bg-accent text-white" : "text-text-secondary hover:bg-surface/30"}`}
+          >
+            <UserRound size={17} /> Treinador
+          </button>
+        </nav>
+
         <main className="flex flex-1 flex-col items-center gap-6">
-          {selectedPokemon ? (
-            <PokemonDetailView pokemon={selectedPokemon} onBack={handleReset} />
+          {module === "trainer" ? (
+            <TrainerView
+              trainer={trainer}
+              theme={theme}
+              onThemeChange={setTheme}
+              themeError={themeError}
+            />
+          ) : module === "companion" ? (
+            <CompanionView
+              candidate={companionCandidate}
+              onBrowse={() => {
+                handleReset();
+                navigate("pokedex");
+              }}
+            />
+          ) : selectedPokemon ? (
+            <PokemonDetailView
+              pokemon={selectedPokemon}
+              onBack={handleReset}
+              onChooseCompanion={() => {
+                setCompanionCandidate({
+                  id: selectedPokemon.id,
+                  name: selectedPokemon.name,
+                });
+                navigate("companion");
+              }}
+            />
           ) : showEmptyState ? (
             <EmptyState
               message={errorMessage ?? "Tente outro nome ou número."}

@@ -3,8 +3,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getPokemon } from "@/api";
+import { usePreferences } from "@/features/preferences";
 import { PokemonDetailScreen } from "@/screens/pokemon-detail-screen";
-import { colors, radius, spacing } from "@/theme";
+import {
+  getAppTheme,
+  getPokemonTypeTheme,
+  normalizePokemonTypeTheme,
+  radius,
+  spacing,
+} from "@/theme";
 
 function routeId(value: string | string[] | undefined) {
   const id = Array.isArray(value) ? value[0] : value;
@@ -13,6 +20,8 @@ function routeId(value: string | string[] | undefined) {
 
 export default function PokemonDetailRoute() {
   const router = useRouter();
+  const { appTheme } = usePreferences();
+  const appPalette = getAppTheme(appTheme);
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const pokemonId = routeId(id);
   const query = useQuery({
@@ -27,9 +36,12 @@ export default function PokemonDetailRoute() {
 
   if (query.isPending) {
     return (
-      <View accessibilityRole="progressbar" style={styles.centered}>
-        <ActivityIndicator color={colors.commandRed} size="large" />
-        <Text selectable style={styles.message}>
+      <View
+        accessibilityRole="progressbar"
+        style={[styles.centered, { backgroundColor: appPalette.background }]}
+      >
+        <ActivityIndicator color={appPalette.accent} size="large" />
+        <Text selectable style={[styles.message, { color: appPalette.mutedText }]}>
           Carregando ficha do Pokémon…
         </Text>
       </View>
@@ -46,7 +58,26 @@ export default function PokemonDetailRoute() {
     );
   }
 
-  return <PokemonDetailScreen pokemon={query.data} onBack={() => router.back()} />;
+  // Route parameters are only a catalogue hint. The freshly fetched payload is
+  // the authority: validate its primary type before allowing a themed detail
+  // screen to mount, so a stale or forged URL cannot select the wrong palette.
+  const primaryType = query.data.types.find((type) => type.trim().length > 0);
+  if (!primaryType || normalizePokemonTypeTheme(primaryType) === "unknown") {
+    return (
+      <RouteMessage
+        title="Tipo de Pokémon inválido"
+        message="A PokéAPI não forneceu um tipo reconhecido para esta ficha."
+      />
+    );
+  }
+
+  return (
+    <PokemonDetailScreen
+      pokemon={query.data}
+      theme={getPokemonTypeTheme(primaryType)}
+      onBack={() => router.back()}
+    />
+  );
 }
 
 function RouteMessage({
@@ -59,24 +90,34 @@ function RouteMessage({
   onRetry?: () => void;
 }) {
   const router = useRouter();
+  const { appTheme } = usePreferences();
+  const palette = getAppTheme(appTheme);
   return (
-    <View style={styles.centered}>
-      <Text selectable style={styles.title}>
+    <View style={[styles.centered, { backgroundColor: palette.background }]}>
+      <Text selectable style={[styles.title, { color: palette.text }]}>
         {title}
       </Text>
-      <Text selectable style={styles.message}>
+      <Text selectable style={[styles.message, { color: palette.mutedText }]}>
         {message}
       </Text>
       <View style={styles.actions}>
         {onRetry ? (
-          <Pressable accessibilityRole="button" onPress={onRetry} style={styles.primaryButton}>
-            <Text selectable style={styles.primaryButtonLabel}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onRetry}
+            style={[styles.primaryButton, { backgroundColor: palette.accent }]}
+          >
+            <Text selectable style={[styles.primaryButtonLabel, { color: palette.accentContrast }]}>
               Tentar novamente
             </Text>
           </Pressable>
         ) : null}
-        <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.secondaryButton}>
-          <Text selectable style={styles.secondaryButtonLabel}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          style={[styles.secondaryButton, { borderColor: palette.border }]}
+        >
+          <Text selectable style={[styles.secondaryButtonLabel, { color: palette.text }]}>
             Voltar
           </Text>
         </Pressable>
@@ -88,20 +129,17 @@ function RouteMessage({
 const styles = StyleSheet.create({
   centered: {
     alignItems: "center",
-    backgroundColor: colors.background,
     flex: 1,
     gap: spacing.md,
     justifyContent: "center",
     padding: spacing.lg,
   },
   title: {
-    color: colors.textPrimary,
     fontSize: 20,
     fontWeight: "900",
     textAlign: "center",
   },
   message: {
-    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     textAlign: "center",
@@ -113,18 +151,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   primaryButton: {
-    backgroundColor: colors.commandRed,
     borderRadius: radius.pill,
     minHeight: 44,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   primaryButtonLabel: {
-    color: colors.white,
     fontWeight: "800",
   },
   secondaryButton: {
-    borderColor: colors.cardBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
     minHeight: 44,
@@ -132,7 +167,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   secondaryButtonLabel: {
-    color: colors.textPrimary,
     fontWeight: "800",
   },
 });
