@@ -43,14 +43,18 @@ function SelectionSlot({
   side,
   pokemon,
   active,
+  artworkSize,
   onPress,
 }: {
   side: SelectionSide;
   pokemon: PokemonSummary | null;
   active: boolean;
+  artworkSize: number;
   onPress: () => void;
 }) {
   const label = side === "player" ? "Seu Pokémon" : "Adversário";
+  const sideStyle = side === "player" ? styles.playerPanel : styles.opponentPanel;
+  const activeStyle = side === "player" ? styles.playerPanelActive : styles.opponentPanelActive;
 
   return (
     <Pressable
@@ -60,23 +64,53 @@ function SelectionSlot({
       accessibilityState={{ selected: active }}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.selectionSlot,
-        active && styles.selectionSlotActive,
+        styles.combatantPanel,
+        sideStyle,
+        active && activeStyle,
         pressed && styles.pressed,
       ]}
     >
-      {pokemon ? (
-        <PokemonArtwork name={pokemon.name} size={56} uri={pokemon.sprites.artwork ?? pokemon.sprites.front} />
-      ) : (
-        <View accessibilityElementsHidden style={styles.slotPlaceholder}>
-          <Text style={styles.slotPlaceholderMark}>?</Text>
-        </View>
-      )}
-      <View style={styles.slotTextWrap}>
-        <Text numberOfLines={1} style={styles.slotLabel}>{label}</Text>
-        <Text numberOfLines={1} style={styles.slotName}>
+      <View style={styles.combatantPanelTop}>
+        <Text style={[styles.combatantSide, side === "player" ? styles.playerText : styles.opponentText]}>
+          {side === "player" ? "SEU POKÉMON" : "ADVERSÁRIO"}
+        </Text>
+        <Text style={[styles.panelStatus, active && styles.panelStatusActive]}>
+          {active ? "ESCOLHENDO" : pokemon ? "PRONTO" : "A ESCOLHER"}
+        </Text>
+      </View>
+
+      <View style={styles.combatantArtworkStage}>
+        {pokemon ? (
+          <PokemonArtwork
+            name={pokemon.name}
+            size={artworkSize}
+            uri={pokemon.sprites.artwork ?? pokemon.sprites.front}
+          />
+        ) : (
+          <View accessibilityElementsHidden style={styles.slotPlaceholder}>
+            <View style={styles.placeholderBall}>
+              <View style={styles.placeholderBallTop} />
+              <View style={styles.placeholderBallBand} />
+              <View style={styles.placeholderBallCenter} />
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.combatantDetails}>
+        <Text numberOfLines={1} style={styles.combatantName}>
           {pokemon ? formatName(pokemon.name) : "Escolha um Pokémon"}
         </Text>
+        {pokemon ? (
+          <>
+            <Text style={styles.combatantNumber}>Nº {String(pokemon.id).padStart(3, "0")}</Text>
+            <View style={styles.panelTypeRow}>
+              {pokemon.types.map((type) => <TypeBadge key={`${side}-${type}`} type={type} />)}
+            </View>
+          </>
+        ) : (
+          <Text style={styles.slotInstruction}>Toque para escolher</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -87,12 +121,14 @@ function SelectionCard({
   side,
   selectedForPlayer,
   selectedForOpponent,
+  artworkSize,
   onPress,
 }: {
   pokemon: PokemonSummary;
   side: SelectionSide;
   selectedForPlayer: boolean;
   selectedForOpponent: boolean;
+  artworkSize: number;
   onPress: () => void;
 }) {
   const isSelected = selectedForPlayer || selectedForOpponent;
@@ -126,7 +162,7 @@ function SelectionCard({
       </View>
       <PokemonArtwork
         name={pokemon.name}
-        size={92}
+        size={artworkSize}
         uri={pokemon.sprites.artwork ?? pokemon.sprites.front}
       />
       <Text numberOfLines={1} style={styles.pokemonName}>{name}</Text>
@@ -209,7 +245,7 @@ export function BattleSelectionScreen() {
   const queryIsError = !isSearchPending && (isSearching ? searchQuery.isError : pageQuery.isError);
   const queryError = isSearching ? searchQuery.error : pageQuery.error;
   const totalPages = Math.max(1, Math.ceil((pageQuery.data?.count ?? 0) / PAGE_SIZE));
-  const columnCount = width < 360 ? 1 : width >= 760 ? 3 : 2;
+  const columnCount = isSearching ? 1 : width < 360 ? 1 : width < 640 ? 2 : width < 1024 ? 3 : 4;
   const canStart = playerPokemon !== null && opponentPokemon !== null;
 
   const selectPokemon = (selectedPokemon: PokemonSummary) => {
@@ -287,30 +323,49 @@ export function BattleSelectionScreen() {
           side={selectionSide}
           selectedForPlayer={playerPokemon?.id === item.id}
           selectedForOpponent={opponentPokemon?.id === item.id}
+          artworkSize={width < 640 ? 72 : width < 1024 ? 80 : 88}
           onPress={() => selectPokemon(item)}
         />
       )}
       ListHeaderComponent={(
         <View style={styles.headerWrap}>
           <View style={styles.hero}>
-            <Text style={styles.eyebrow}>CENTRO DE BATALHA</Text>
-            <Text accessibilityRole="header" style={styles.heroTitle}>Batalha</Text>
-            <Text style={styles.heroText}>Escolha um Pokémon para cada lado e prepare-se para lutar.</Text>
+            <View style={styles.heroHeading}>
+              <View style={styles.heroMark}>
+                <Text style={styles.heroMarkText}>VS</Text>
+              </View>
+              <View style={styles.heroCopy}>
+                <Text style={styles.eyebrow}>CENTRO DE BATALHA</Text>
+                <Text accessibilityRole="header" style={styles.heroTitle}>Monte seu confronto</Text>
+              </View>
+            </View>
+            <Text style={styles.heroText}>Escolha quem entra na arena e encontre um adversário no catálogo.</Text>
           </View>
 
           <View style={styles.selectionCard}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>Combatentes</Text>
-            <View style={styles.selectionSlots}>
+            <View style={styles.matchupHeading}>
+              <View>
+                <Text style={styles.eyebrowDark}>PRÓXIMA BATALHA</Text>
+                <Text accessibilityRole="header" style={styles.sectionTitle}>Escolha os combatentes</Text>
+              </View>
+              <Text style={styles.matchupHint}>Toque em um lado para editar</Text>
+            </View>
+            <View style={styles.matchupRow}>
               <SelectionSlot
                 side="player"
                 pokemon={playerPokemon}
                 active={selectionSide === "player"}
+                artworkSize={width < 420 ? 76 : width < 900 ? 100 : 116}
                 onPress={() => setSelectionSide("player")}
               />
+              <View accessibilityElementsHidden style={styles.versusBadge}>
+                <Text style={styles.versusText}>VS</Text>
+              </View>
               <SelectionSlot
                 side="opponent"
                 pokemon={opponentPokemon}
                 active={selectionSide === "opponent"}
+                artworkSize={width < 420 ? 76 : width < 900 ? 100 : 116}
                 onPress={() => setSelectionSide("opponent")}
               />
             </View>
@@ -417,7 +472,10 @@ const styles = StyleSheet.create({
   },
   list: {
     backgroundColor: colors.background,
+    alignSelf: "center",
     flex: 1,
+    maxWidth: 1080,
+    width: "100%",
   },
   listContent: {
     flexGrow: 1,
@@ -426,33 +484,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   headerWrap: {
+    alignSelf: "center",
     gap: spacing.md,
+    maxWidth: 1080,
+    width: "100%",
   },
   hero: {
-    backgroundColor: colors.deepBlue,
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
     gap: spacing.xs,
-    marginHorizontal: -spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.xs,
+    paddingTop: spacing.sm,
+  },
+  heroHeading: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  heroMark: {
+    alignItems: "center",
+    backgroundColor: colors.commandRed,
+    borderRadius: radius.md,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+  heroMarkText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  heroCopy: {
+    flex: 1,
+    gap: spacing.xxs,
   },
   eyebrow: {
-    color: "#C5D9F1",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.2,
+    ...typography.overline,
+    color: colors.textMuted,
   },
   heroTitle: {
     ...typography.display,
-    color: colors.white,
-    marginTop: spacing.xs,
+    color: colors.deepBlue,
+    fontSize: 22,
+    lineHeight: 27,
   },
   heroText: {
-    ...typography.body,
-    color: "#D9E9F9",
-    maxWidth: 520,
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginLeft: 50,
+  },
+  eyebrowDark: {
+    ...typography.overline,
+    color: colors.commandRed,
   },
   selectionCard: {
     backgroundColor: colors.card,
@@ -460,67 +542,185 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     boxShadow: shadows.card,
-    gap: spacing.sm,
-    marginTop: -spacing.lg,
+    gap: spacing.md,
     padding: spacing.md,
   },
-  sectionTitle: {
-    ...typography.title,
-    color: colors.deepBlue,
-  },
-  selectionSlots: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  selectionSlot: {
+  matchupHeading: {
     alignItems: "center",
-    backgroundColor: colors.cardSurface,
-    borderColor: colors.cardBorder,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    justifyContent: "space-between",
+  },
+  sectionTitle: {
+    ...typography.display,
+    color: colors.deepBlue,
+    fontSize: 20,
+    lineHeight: 25,
+  },
+  matchupHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  matchupRow: {
+    alignItems: "center",
     flexDirection: "row",
     gap: spacing.xs,
-    minHeight: 82,
-    padding: spacing.xs,
   },
-  selectionSlotActive: {
+  combatantPanel: {
+    alignItems: "center",
+    borderColor: colors.cardBorder,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    flex: 1,
+    gap: spacing.xs,
+    minHeight: 218,
+    padding: spacing.sm,
+  },
+  playerPanel: {
+    backgroundColor: "#F1F6FC",
+    borderColor: "#D3E0ED",
+  },
+  opponentPanel: {
+    backgroundColor: "#FFF5F5",
+    borderColor: "#F0D8DB",
+  },
+  playerPanelActive: {
+    borderColor: colors.deepBlue,
+    borderWidth: 2,
+  },
+  opponentPanelActive: {
     borderColor: colors.commandRed,
     borderWidth: 2,
+  },
+  combatantPanelTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xxs,
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  combatantSide: {
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+  },
+  playerText: {
+    color: colors.deepBlue,
+  },
+  opponentText: {
+    color: colors.commandRed,
+  },
+  panelStatus: {
+    color: colors.textMuted,
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 0.35,
+  },
+  panelStatusActive: {
+    color: colors.commandRed,
+  },
+  combatantArtworkStage: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 98,
+    width: "100%",
   },
   slotPlaceholder: {
     alignItems: "center",
     backgroundColor: colors.background,
     borderColor: colors.cardBorder,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 1,
+    height: 80,
+    justifyContent: "center",
+    width: 80,
+  },
+  placeholderBall: {
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderColor: colors.deepBlue,
+    borderRadius: radius.pill,
+    borderWidth: 2,
     height: 56,
     justifyContent: "center",
+    overflow: "hidden",
     width: 56,
   },
-  slotPlaceholderMark: {
-    color: colors.textMuted,
-    fontSize: 22,
-    fontWeight: "800",
+  placeholderBallTop: {
+    backgroundColor: colors.commandRed,
+    height: 26,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
-  slotTextWrap: {
-    flex: 1,
+  placeholderBallBand: {
+    backgroundColor: colors.deepBlue,
+    height: 4,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  placeholderBallCenter: {
+    backgroundColor: colors.white,
+    borderColor: colors.deepBlue,
+    borderRadius: radius.pill,
+    borderWidth: 3,
+    height: 16,
+    width: 16,
+  },
+  combatantDetails: {
+    alignItems: "center",
     gap: spacing.xxs,
-    minWidth: 0,
+    width: "100%",
   },
-  slotLabel: {
-    ...typography.overline,
-    color: colors.textSecondary,
+  combatantName: {
+    ...typography.title,
+    color: colors.deepBlue,
+    maxWidth: "100%",
+    textAlign: "center",
   },
-  slotName: {
+  combatantNumber: {
     ...typography.caption,
-    color: colors.textPrimary,
-    fontWeight: "800",
+    color: colors.textMuted,
+  },
+  panelTypeRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xxs,
+    justifyContent: "center",
+    marginTop: spacing.xxs,
+  },
+  slotInstruction: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: "center",
   },
   selectionPrompt: {
     ...typography.caption,
     color: colors.commandRed,
     fontWeight: "700",
+    textAlign: "center",
+  },
+  versusBadge: {
+    alignItems: "center",
+    backgroundColor: colors.deepBlue,
+    borderColor: colors.white,
+    borderRadius: radius.pill,
+    borderWidth: 3,
+    height: 40,
+    justifyContent: "center",
+    marginHorizontal: -spacing.sm,
+    width: 40,
+    zIndex: 1,
+  },
+  versusText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.5,
   },
   searchCard: {
     backgroundColor: colors.card,
@@ -571,7 +771,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   gridRow: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   pokemonCard: {
     alignItems: "center",
@@ -581,10 +781,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     boxShadow: shadows.card,
     flex: 1,
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-    minHeight: 222,
-    padding: spacing.sm,
+    gap: spacing.xxs,
+    marginBottom: spacing.sm,
+    minHeight: 178,
+    padding: spacing.xs,
   },
   pokemonCardSelected: {
     backgroundColor: colors.cardSurface,
@@ -623,8 +823,9 @@ const styles = StyleSheet.create({
     color: colors.commandRed,
   },
   pokemonName: {
-    ...typography.title,
+    ...typography.body,
     color: colors.deepBlue,
+    fontWeight: "800",
     maxWidth: "100%",
     textAlign: "center",
   },
@@ -689,13 +890,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   stickyFooter: {
+    alignSelf: "center",
     backgroundColor: colors.background,
     borderColor: colors.cardBorder,
     borderTopWidth: 1,
     gap: spacing.xs,
+    maxWidth: 1080,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
+    width: "100%",
   },
   pagination: {
     alignItems: "center",

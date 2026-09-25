@@ -90,27 +90,37 @@ function ReadyBattle({
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.readyScreen}>
-      <View style={styles.topBar}>
-        <BackButton onPress={onBack} />
-        <Text accessibilityRole="header" style={styles.screenTitle}>Arena</Text>
-        <Text style={styles.turnNumber}>Turno {battle.state.turnNumber}</Text>
+      <View style={styles.screenFrame}>
+        <View style={styles.topBar}>
+          <BackButton onPress={onBack} />
+          <View style={styles.headerCopy}>
+            <Text style={styles.headerEyebrow}>COMBATE</Text>
+            <Text accessibilityRole="header" style={styles.screenTitle}>Arena</Text>
+          </View>
+          <View style={styles.turnPill}>
+            <Text style={styles.turnLabel}>TURNO</Text>
+            <Text style={styles.turnNumber}>{battle.state.turnNumber}</Text>
+          </View>
+        </View>
+        {battle.actionError ? (
+          <Text accessibilityRole="alert" style={styles.actionError}>{battle.actionError.message}</Text>
+        ) : null}
+        <View style={styles.arenaFrame}>
+          <BattleArena
+            player={battle.player}
+            opponent={battle.opponent}
+            availableMoves={battle.availableMoves}
+            onMove={battle.selectMove}
+            inputBlocked={!battle.canSelectMove || battle.isResolving}
+            logItems={battle.eventHistory}
+            outcome={outcome}
+            onRematch={battle.rematch}
+            onBack={onBack}
+            hitSequence={damageEvents.length}
+            hitSide={hitSide}
+          />
+        </View>
       </View>
-      {battle.actionError ? (
-        <Text accessibilityRole="alert" style={styles.actionError}>{battle.actionError.message}</Text>
-      ) : null}
-      <BattleArena
-        player={battle.player}
-        opponent={battle.opponent}
-        availableMoves={battle.availableMoves}
-        onMove={battle.selectMove}
-        inputBlocked={!battle.canSelectMove || battle.isResolving}
-        logItems={battle.eventHistory}
-        outcome={outcome}
-        onRematch={battle.rematch}
-        onBack={onBack}
-        hitSequence={damageEvents.length}
-        hitSide={hitSide}
-      />
     </SafeAreaView>
   );
 }
@@ -133,25 +143,30 @@ export function BattleScreen({ playerId, opponentId }: BattleScreenProps) {
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.preparationScreen}>
-      <View style={styles.topBar}>
-        <BackButton onPress={goToSelection} />
-        <Text accessibilityRole="header" style={styles.screenTitle}>Preparação</Text>
-        <View style={styles.topBarSpacer} />
+      <View style={styles.screenFrame}>
+        <View style={styles.topBar}>
+          <BackButton onPress={goToSelection} />
+          <View style={styles.headerCopy}>
+            <Text style={styles.headerEyebrow}>CENTRO DE BATALHA</Text>
+            <Text accessibilityRole="header" style={styles.screenTitle}>Preparação</Text>
+          </View>
+          <View style={styles.topBarSpacer} />
+        </View>
+        {data.isError ? (
+          <StatePanel
+            title="Não foi possível preparar a batalha"
+            message={data.error?.message ?? "Confira sua conexão e tente novamente."}
+            actionLabel="Tentar novamente"
+            onAction={() => void data.retry()}
+          />
+        ) : (
+          <StatePanel
+            title="Preparando batalha…"
+            message="Carregando os combatentes e os dados necessários para a arena."
+            loading
+          />
+        )}
       </View>
-      {data.isError ? (
-        <StatePanel
-          title="Não foi possível preparar a batalha"
-          message={data.error?.message ?? "Confira sua conexão e tente novamente."}
-          actionLabel="Tentar novamente"
-          onAction={() => void data.retry()}
-        />
-      ) : (
-        <StatePanel
-          title="Preparando batalha…"
-          message="Carregando os combatentes e os dados necessários para a arena."
-          loading
-        />
-      )}
     </SafeAreaView>
   );
 }
@@ -160,33 +175,73 @@ const styles = StyleSheet.create({
   preparationScreen: {
     backgroundColor: colors.background,
     flex: 1,
-    gap: spacing.md,
     padding: spacing.md,
   },
   readyScreen: {
     backgroundColor: colors.background,
     flex: 1,
   },
+  screenFrame: {
+    alignSelf: "center",
+    flex: 1,
+    maxWidth: 520,
+    width: "100%",
+  },
   topBar: {
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.sm,
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    minHeight: 58,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  headerCopy: {
+    alignItems: "center",
+    flex: 1,
+    gap: 0,
+  },
+  headerEyebrow: {
+    ...typography.overline,
+    color: colors.textMuted,
+    fontSize: 9,
+  },
+  arenaFrame: {
+    alignSelf: "center",
+    flex: 1,
+    maxWidth: 520,
+    width: "100%",
   },
   screenTitle: {
-    ...typography.title,
+    ...typography.body,
     color: colors.deepBlue,
+    fontWeight: "800",
   },
   turnNumber: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    minWidth: 70,
-    textAlign: "right",
+    color: colors.deepBlue,
+    fontSize: 14,
+    fontWeight: "900",
   },
   topBarSpacer: {
-    minWidth: 70,
+    width: 60,
+  },
+  turnPill: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.xs,
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 72,
+    paddingHorizontal: spacing.sm,
+  },
+  turnLabel: {
+    ...typography.overline,
+    color: colors.textMuted,
+    fontSize: 8,
   },
   backButton: {
     alignItems: "center",
@@ -196,8 +251,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 42,
-    paddingHorizontal: spacing.md,
+    minHeight: 38,
+    paddingHorizontal: spacing.sm,
   },
   backButtonLabel: {
     ...typography.caption,
@@ -211,11 +266,13 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
     borderRadius: radius.lg,
     borderWidth: 1,
-    gap: spacing.md,
+    gap: spacing.sm,
     justifyContent: "center",
-    maxWidth: 560,
-    minHeight: 240,
-    padding: spacing.xl,
+    marginTop: "auto",
+    marginBottom: "auto",
+    maxWidth: 520,
+    minHeight: 190,
+    padding: spacing.lg,
     width: "100%",
   },
   stateTitle: {
